@@ -86,9 +86,6 @@ const RelayPage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header with Create Button */}
           <div className="mb-8 flex justify-between items-start">
-            <h1 className="text-7xl md:text-9xl font-light text-black tracking-tight leading-none">
-              <span className="font-normal">relay</span>
-            </h1>
             <button
               onClick={handleCreateRelay}
               className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 flex items-center space-x-2 font-medium"
