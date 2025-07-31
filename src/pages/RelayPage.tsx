@@ -103,17 +103,16 @@ const RelayPage: React.FC = () => {
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-12 shadow-xl max-w-md">
                 <Send className="w-16 h-16 text-gray-400 mx-auto mb-6" />
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                  Connect to Start Relaying
+                  Smart Way to Agree
                 </h2>
                 <p className="text-gray-600 mb-8 leading-relaxed">
-                  Relay transactions require wallet authentication for security. 
-                  Connect your wallet to create and manage secure transaction relays.
+                  Relay enables synchronized smart transfers—no middleman, no delay.
                 </p>
                 <button
                   onClick={() => open()}
                   className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
                 >
-                  Connect Wallet
+                  Relay the Signal
                 </button>
               </div>
             </div>
