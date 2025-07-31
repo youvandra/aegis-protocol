@@ -115,7 +115,6 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
                 onClick={() => disconnect()}
                 className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline"
               >
-                Disconnect
               </button>
             </div>
           ) : (
