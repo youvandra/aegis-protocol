@@ -37,8 +37,8 @@ const LegacyPage: React.FC = () => {
   return (
     <div className="min-h-screen relative flex flex-col bg-[#D9D9D9]">
       <AestheticNavbar 
-        leftLinkPath="/schedule"
-        leftLinkText="Schedule"
+        leftLinkPath="/stream"
+        leftLinkText="Stream"
         roomName="Legacy"
         rightLinkPath="/relay"
         rightLinkText="Relay"
