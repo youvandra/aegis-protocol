@@ -11,7 +11,7 @@ const metadata = {
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 }
 
-const chains = [mainnet, sepolia] as const
+const chains = [mainnet, sepolia, hedera] as const
 
 export const config = defaultWagmiConfig({
   chains,
