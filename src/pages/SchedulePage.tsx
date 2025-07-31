@@ -13,7 +13,7 @@ const DataPage: React.FC = () => {
       <AestheticNavbar 
         leftLinkPath="/relay"
         leftLinkText="Relay"
-        roomName="Data"
+        roomName="Schedule"
         rightLinkPath="/legacy"
         rightLinkText="Legacy"
       />
