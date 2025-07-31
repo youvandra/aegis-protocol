@@ -2,13 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 interface HeaderProps {
+  isConnected: boolean;
   onWalletRequired?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onWalletRequired }) => {
+const Header: React.FC<HeaderProps> = ({ isConnected, onWalletRequired }) => {
 
   const handleNavClick = (e: React.MouseEvent, path: string) => {
-    if (path === '/data' || path === '/legacy' || path === '/relay') {
+    if ((path === '/data' || path === '/legacy' || path === '/relay') && !isConnected) {
       e.preventDefault();
       if (onWalletRequired) {
         onWalletRequired();
