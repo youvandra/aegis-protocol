@@ -1,12 +1,12 @@
 import React from 'react';
-import ScheduleTableRow from './ScheduleTableRow';
-import { Group } from '../types/schedule';
+import ScheduleTableRow from './StreamTableRow';
+import { Group } from '../types/stream';
 
 interface ScheduleTableProps {
   data: Group[];
 }
 
-const ScheduleTable: React.FC<ScheduleTableProps> = ({ data }) => {
+const StreamTable: React.FC<StreamTableProps> = ({ data }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -39,7 +39,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ data }) => {
               </tr>
             ) : (
               data.map((group) => (
-                <ScheduleTableRow key={group.id} group={group} />
+                <StreamTableRow key={group.id} group={group} />
               ))
             )}
           </tbody>
@@ -49,4 +49,4 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ data }) => {
   );
 };
 
-export default ScheduleTable;
+export default StreamTable;
