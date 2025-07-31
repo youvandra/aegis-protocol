@@ -1,6 +1,7 @@
 import React from 'react';
 
 const LegacyPage: React.FC = () => {
+  return (
     <div className="min-h-screen relative flex flex-col bg-[#D9D9D9]">
       <main className="flex-1 px-8 pt-8">
         <div className="max-w-7xl mx-auto">
@@ -14,3 +15,5 @@ const LegacyPage: React.FC = () => {
     </div>
   );
 };
+
+export default LegacyPage;
