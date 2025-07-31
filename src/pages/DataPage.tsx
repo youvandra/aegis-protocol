@@ -44,7 +44,6 @@ const DataPage: React.FC = () => {
             </div>
           )}
           </div>
-        </div>
       </main>
     </div>
   );
