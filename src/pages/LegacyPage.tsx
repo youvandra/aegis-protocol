@@ -88,14 +88,14 @@ const LegacyPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex gap-8">
+            <div className="flex flex-col md:flex-row gap-8">
               {/* Left Side - Set Beneficiaries Form */}
-              <div className="w-1/2">
+              <div className="w-full md:w-1/2">
                 <SetBeneficiariesForm onAddBeneficiary={handleAddBeneficiary} />
               </div>
               
               {/* Right Side - Beneficiaries Display */}
-              <div className="w-1/2">
+              <div className="w-full md:w-1/2">
                 <BeneficiariesDisplay 
                   beneficiaries={beneficiaries} 
                   legacyMoment={legacyMoment}

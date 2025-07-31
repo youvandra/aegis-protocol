@@ -157,7 +157,7 @@ const StreamPage: React.FC = () => {
         rightLinkPath="/legacy"
         rightLinkText="Legacy"
       />
-      <main className="flex-1 px-8 pt-0">
+      <main className="flex-1 px-4 sm:px-8 pt-0">
         <div className="max-w-7xl mx-auto">
           {!isConnected ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -207,7 +207,7 @@ const StreamPage: React.FC = () => {
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex space-x-3">
+                <div className="flex flex-wrap justify-end gap-3">
                   <button
                     onClick={() => setShowCreateGroupModal(true)}
                     className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 flex items-center space-x-2 font-medium"

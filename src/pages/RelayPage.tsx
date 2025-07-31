@@ -96,7 +96,7 @@ const RelayPage: React.FC = () => {
         rightLinkPath="/stream"
         rightLinkText="Stream"
       />
-      <main className="flex-1 px-8 pt-0 pb-8">
+      <main className="flex-1 px-4 sm:px-8 pt-0 pb-8">
         <div className="max-w-7xl mx-auto">
           {!isConnected ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
