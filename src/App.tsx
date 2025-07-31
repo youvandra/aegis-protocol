@@ -11,7 +11,7 @@ function App() {
     <div className="min-h-screen relative flex flex-col">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-[#CACACB] bg-[url('/bg.webp')] bg-no-repeat bg-center bg-fixed bg-[length:1920px_auto]"
+        className="absolute inset-0 bg-[#CACACB]"
       />
       
       {/* Content Layer */}
