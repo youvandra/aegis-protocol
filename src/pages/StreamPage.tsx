@@ -93,59 +93,58 @@ const StreamPage: React.FC = () => {
   const upcomingGroups = groups.filter(group => group.status === 'upcoming');
   const releasedGroups = groups.filter(group => group.status === 'released');
 
-  const handleCreateGroup = (groupData: {
-    groupName: string;
+  const handleCreateGroup = async (groupData: {
+    group_name: string;
     releaseType: 'monthly' | 'one-time';
     releaseDate?: string;
   }) => {
-    const newGroup: Group = {
-      id: Date.now().toString(),
-      number: `GRP-${String(groups.length + 1).padStart(3, '0')}`,
-      groupName: groupData.groupName,
-      releaseDate: groupData.releaseDate || '',
-      releaseType: groupData.releaseType,
-      totalMembers: 0,
-      totalAmount: '0.00 HBAR',
-      status: 'upcoming',
-      members: []
-    };
+    if (!address) return;
     
-    setGroups(prev => [...prev, newGroup]);
-    setShowCreateGroupModal(false);
+    try {
+      const newGroup = await streamService.createGroup(
+        groupData.group_name,
+        groupData.releaseType,
+        address,
+        groupData.releaseDate
+      );
+      
+      if (newGroup) {
+        setGroups(prev => [newGroup, ...prev]);
+        setShowCreateGroupModal(false);
+      } else {
+        alert('Failed to create group. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating group:', error);
+      alert('Failed to create group. Please try again.');
+    }
   };
 
-  const handleAddMember = (memberData: {
+  const handleAddMember = async (memberData: {
     groupId: string;
     name: string;
     address: string;
-    amount: string;
+    amount: number;
   }) => {
-    const newMember: Member = {
-      id: Date.now().toString(),
-      name: memberData.name,
-      address: memberData.address,
-      amount: `${memberData.amount} HBAR`
-    };
-
-    setGroups(prev => prev.map(group => {
-      if (group.id === memberData.groupId) {
-        const updatedMembers = [...group.members, newMember];
-        const totalAmount = updatedMembers.reduce((sum, member) => {
-          const amount = parseFloat(member.amount.replace(' HBAR', ''));
-          return sum + amount;
-        }, 0);
-        
-        return {
-          ...group,
-          members: updatedMembers,
-          totalMembers: updatedMembers.length,
-          totalAmount: `${totalAmount.toFixed(2)} HBAR`
-        };
+    try {
+      const newMember = await streamService.addMemberToGroup(
+        memberData.groupId,
+        memberData.name,
+        memberData.address,
+        memberData.amount
+      );
+      
+      if (newMember) {
+        // Reload groups to get updated totals
+        await loadGroups();
+        setShowAddMemberModal(false);
+      } else {
+        alert('Failed to add member. Please try again.');
       }
-      return group;
-    }));
-    
-    setShowAddMemberModal(false);
+    } catch (error) {
+      console.error('Error adding member:', error);
+      alert('Failed to add member. Please try again.');
+    }
   };
 
   return (
@@ -227,9 +226,16 @@ const StreamPage: React.FC = () => {
 
               {/* Table */}
               <div className="mb-8">
-                <StreamTable 
-                  data={activeTab === 'upcoming' ? upcomingGroups : releasedGroups} 
-                />
+                {loading ? (
+                  <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading groups...</p>
+                  </div>
+                ) : (
+                  <StreamTable 
+                    data={activeTab === 'upcoming' ? upcomingGroups : releasedGroups} 
+                  />
+                )}
               </div>
             </>
           )}
