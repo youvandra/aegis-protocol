@@ -76,6 +76,13 @@ const StreamPage: React.FC = () => {
     address: string;
     amount: string;
   }) => {
+    // Validate member data before processing
+    if (!memberData.groupId || !memberData.name || !memberData.address || !memberData.amount) {
+      console.error('Invalid member data:', memberData);
+      alert('Please fill in all required fields.');
+      return;
+    }
+
     try {
       console.log('Adding member with data:', memberData);
       const newMember = await streamService.addMemberToGroup(

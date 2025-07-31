@@ -30,6 +30,19 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Additional validation to ensure all fields have values
+    if (!selectedGroupId || !name.trim() || !address.trim() || !amount.trim()) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    // Validate amount is a positive number
+    const numericAmount = parseFloat(amount.trim());
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      alert('Please enter a valid positive amount.');
+      return;
+    }
+
     if (selectedGroupId && name.trim() && address.trim() && amount.trim()) {
       onSubmit({
         groupId: selectedGroupId,
