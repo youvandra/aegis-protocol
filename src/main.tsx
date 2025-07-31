@@ -14,7 +14,16 @@ const queryClient = new QueryClient();
 createWeb3Modal({
   wagmiConfig: config,
   projectId,
-  enableAnalytics: false, // Disabled to prevent network errors
+  enableAnalytics: false,
+  enableOnramp: false,
+  enableSwaps: false,
+  enableEmail: false,
+  enableSocials: [],
+  featuredWalletIds: [],
+  includeWalletIds: [],
+  excludeWalletIds: [],
+  termsConditionsUrl: undefined,
+  privacyPolicyUrl: undefined,
 });
 
 createRoot(document.getElementById('root')!).render(
