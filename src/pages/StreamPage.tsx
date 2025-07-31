@@ -258,4 +258,4 @@ const StreamPage: React.FC = () => {
   );
 };
 
-export default StreamStreamPage;
+export default StreamPage;
