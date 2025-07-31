@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
-import SchedulePage from './pages/StreamPage';
+import StreamPage from './pages/StreamPage';
 import LegacyPage from './pages/LegacyPage';
 import RelayPage from './pages/RelayPage';
 
@@ -18,7 +18,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/stream" element={<SchedulePage />} />
+            <Route path="/stream" element={<StreamPage />} />
             <Route path="/legacy" element={<LegacyPage />} />
             <Route path="/relay" element={<RelayPage />} />
           </Routes>
