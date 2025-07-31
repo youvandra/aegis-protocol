@@ -24,14 +24,14 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
 }) => {
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
+  const [memberAddress, setMemberAddress] = useState('');
   const [amount, setAmount] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Additional validation to ensure all fields have values
-    if (!selectedGroupId || !name.trim() || !address.trim() || !amount.trim()) {
+    if (!selectedGroupId || !name.trim() || !memberAddress.trim() || !amount.trim()) {
       alert('Please fill in all required fields.');
       return;
     }
@@ -47,14 +47,14 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       onSubmit({
         groupId: selectedGroupId,
         name: name.trim(),
-        address: address.trim(),
+        address: memberAddress.trim(),
         amount: amount.trim(),
       });
       
       // Reset form
       setSelectedGroupId('');
       setName('');
-      setAddress('');
+      setMemberAddress('');
       setAmount('');
     }
   };
@@ -62,7 +62,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const handleClose = () => {
     setSelectedGroupId('');
     setName('');
-    setAddress('');
+    setMemberAddress('');
     setAmount('');
     onClose();
   };
@@ -171,8 +171,8 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             <input
               type="text"
               id="memberAddress"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={memberAddress}
+              onChange={(e) => setMemberAddress(e.target.value)}
               placeholder="0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 font-mono text-sm"
               required

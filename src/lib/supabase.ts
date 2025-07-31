@@ -271,24 +271,24 @@ export const streamService = {
   async addMemberToGroup(
     groupId: string,
     name: string,
-    walletAddress: string,
+    memberWalletAddress: string,
     amount: number
   ): Promise<Member | null> {
     try {
       // Validate inputs
-      if (!groupId || !name || !walletAddress || !amount) {
-        console.error('Missing required parameters:', { groupId, name, walletAddress, amount });
+      if (!groupId || !name || !memberWalletAddress || !amount) {
+        console.error('Missing required parameters:', { groupId, name, memberWalletAddress, amount });
         return null;
       }
 
-      console.log('Adding member to group:', { groupId, name, walletAddress, amount });
+      console.log('Adding member to group:', { groupId, name, memberWalletAddress, amount });
       
       const { data, error } = await supabase
         .from('members')
         .insert({
           group_id: groupId,
           name: name,
-          wallet_address: walletAddress.toLowerCase(),
+          wallet_address: memberWalletAddress.toLowerCase(),
           amount: amount
         })
         .select()
