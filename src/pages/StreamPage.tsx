@@ -7,7 +7,7 @@ import AestheticNavbar from '../components/AestheticNavbar';
 import StreamTable from '../components/StreamTable';
 import CreateGroupModal from '../components/CreateGroupModal';
 import AddMemberModal from '../components/AddMemberModal';
-import { Group, Member } from '../types/schedule';
+import { Group, Member } from '../types/stream';
 
 const StreamPage: React.FC = () => {
   const { isConnected } = useAccount();
