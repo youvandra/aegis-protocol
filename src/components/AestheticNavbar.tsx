@@ -52,7 +52,18 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
       </div>
         
         {/* Wallet Connection Section */}
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+          {/* Homepage Button - Left Side */}
+          <Link 
+            to="/"
+            className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-4 py-2 hover:bg-white/95 transition-all duration-200"
+          >
+            <span className="text-sm text-gray-700 hover:text-black font-medium">
+              Homepage
+            </span>
+          </Link>
+          
+          {/* Wallet Connection - Right Side */}
           <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-4 py-2">
             {isConnected ? (
               <div className="flex items-center space-x-3">
