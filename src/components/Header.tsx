@@ -15,7 +15,7 @@ const Header: React.FC<HeaderProps> = ({ isConnected, onWalletRequired }) => {
           <img 
             src="/logoap.png" 
             alt="Aegis Protocol" 
-            className="h-12 w-auto"
+            className="h-16 w-auto"
           />
         </div>
         <div className="fixed left-0 top-1/2 -translate-y-1/2 flex flex-col items-start space-y-3 md:static md:flex-row md:items-center md:space-x-8 md:space-y-0">
