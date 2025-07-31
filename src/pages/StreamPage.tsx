@@ -19,15 +19,10 @@ const StreamPage: React.FC = () => {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
   const loadGroups = async () => {
-    if (!address) {
-      setGroups([]);
-      setLoading(false);
-      return;
-    }
-    
     setLoading(true);
     try {
-      const groupsData = await streamService.getGroups(address);
+      console.log('Loading groups...');
+      const groupsData = await streamService.getGroups(address || '');
       console.log('Loaded groups:', groupsData);
       setGroups(groupsData);
     } catch (error) {
@@ -39,12 +34,7 @@ const StreamPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (address) {
-      loadGroups();
-    } else {
-      setGroups([]);
-      setLoading(false);
-    }
+    loadGroups();
   }, [address]);
 
   const upcomingGroups = groups.filter(group => group.status === 'upcoming');

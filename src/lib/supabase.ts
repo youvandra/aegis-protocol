@@ -217,9 +217,14 @@ export const streamService = {
 
   async getGroups(walletAddress: string): Promise<Group[]> {
     try {
+      console.log('Fetching groups for wallet:', walletAddress);
+      
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
-        .select('*')
+        .select(`
+          *,
+          members (*)
+        `)
         .order('created_at', { ascending: false });
 
       if (groupsError) {
@@ -231,33 +236,32 @@ export const streamService = {
         return [];
       }
 
-      // Fetch members for each group
-      const groupsWithMembers = await Promise.all(
-        groupsData.map(async (group) => {
-          const { data: membersData, error: membersError } = await supabase
-            .from('members')
-            .select('*')
-            .eq('group_id', group.id)
-            .order('created_at', { ascending: true });
+      console.log('Raw groups data:', groupsData);
+      
+      // Transform the data to match the Group interface
+      const transformedGroups: Group[] = groupsData.map(group => ({
+        id: group.id,
+        group_number: group.group_number,
+        group_name: group.group_name,
+        release_date: group.release_date,
+        release_type: group.release_type,
+        total_members: group.total_members,
+        total_amount: group.total_amount,
+        wallet_address: group.wallet_address,
+        status: group.status,
+        created_at: group.created_at,
+        updated_at: group.updated_at,
+        // Legacy interface compatibility
+        groupName: group.group_name,
+        releaseDate: group.release_date,
+        releaseType: group.release_type,
+        totalMembers: group.total_members,
+        totalAmount: group.total_amount,
+        members: Array.isArray(group.members) ? group.members : []
+      }));
 
-          if (membersError) {
-            console.error('Error fetching members for group:', group.id, membersError);
-            return { ...group, members: [] };
-          }
-
-          return {
-            ...group,
-            groupName: group.group_name,
-            releaseDate: group.release_date,
-            releaseType: group.release_type,
-            totalMembers: group.total_members,
-            totalAmount: group.total_amount,
-            members: membersData || []
-          };
-        })
-      );
-
-      return groupsWithMembers;
+      console.log('Transformed groups:', transformedGroups);
+      return transformedGroups;
     } catch (error) {
       console.error('Error in getGroups:', error);
       return [];
@@ -271,6 +275,8 @@ export const streamService = {
     amount: number
   ): Promise<Member | null> {
     try {
+      console.log('Adding member to group:', { groupId, name, walletAddress, amount });
+      
       const { data, error } = await supabase
         .from('members')
         .insert({
@@ -287,6 +293,7 @@ export const streamService = {
         return null;
       }
 
+      console.log('Member added successfully:', data);
       return data;
     } catch (error) {
       console.error('Error in addMemberToGroup:', error);

@@ -51,23 +51,23 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group }) => {
           </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-          {group.group_name || group.groupName}
+          {group.group_name}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
           <div className="flex items-center">
-            {group.releaseType === 'monthly' ? (
+            {group.release_type === 'monthly' ? (
               <Repeat className="w-4 h-4 mr-2 text-blue-600" />
             ) : (
               <Calendar className="w-4 h-4 mr-2 text-gray-600" />
             )}
-            {formatReleaseDate(group.release_type || group.releaseType, group.release_date || group.releaseDate)}
+            {formatReleaseDate(group.release_type, group.release_date)}
           </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-          {group.total_members || group.totalMembers || 0}
+          {group.total_members || 0}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-          {group.total_amount || group.totalAmount || 0}
+          {group.total_amount || 0} HBAR
         </td>
       </tr>
       {isExpanded && (
@@ -84,10 +84,10 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group }) => {
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <h5 className="font-medium text-gray-900">{member.name}</h5>
-                          <p className="text-xs text-gray-600 font-mono break-all">{member.address}</p>
+                          <p className="text-xs text-gray-600 font-mono break-all">{member.wallet_address}</p>
                         </div>
                         <div className="ml-4 text-right">
-                          <span className="text-sm font-semibold text-gray-900">{member.amount}</span>
+                          <span className="text-sm font-semibold text-gray-900">{member.amount} HBAR</span>
                         </div>
                       </div>
                     </div>
