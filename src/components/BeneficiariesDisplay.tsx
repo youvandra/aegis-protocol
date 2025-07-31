@@ -1,12 +1,17 @@
 import React from 'react';
-import { Users, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Users, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { Beneficiary } from '../types/beneficiary';
+import { LegacyMoment } from '../types/legacyMoment';
 
 interface BeneficiariesDisplayProps {
   beneficiaries: Beneficiary[];
+  legacyMoment?: LegacyMoment | null;
 }
 
-const BeneficiariesDisplay: React.FC<BeneficiariesDisplayProps> = ({ beneficiaries }) => {
+const BeneficiariesDisplay: React.FC<BeneficiariesDisplayProps> = ({ 
+  beneficiaries, 
+  legacyMoment 
+}) => {
   const totalPercentage = beneficiaries.reduce((sum, beneficiary) => sum + beneficiary.percentage, 0);
   const isComplete = totalPercentage === 100;
   const isOverAllocated = totalPercentage > 100;
@@ -40,6 +45,17 @@ const BeneficiariesDisplay: React.FC<BeneficiariesDisplayProps> = ({ beneficiari
         <Users className="w-6 h-6 mr-2" />
         Beneficiaries
       </h2>
+
+      {/* Legacy Moment Display */}
+      {legacyMoment && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center space-x-2 mb-2">
+            <Clock className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-900">Activation Moment</span>
+          </div>
+          <p className="text-sm text-blue-800">{legacyMoment.label}</p>
+        </div>
+      )}
 
       {/* Circular Progress Chart */}
       <div className="flex flex-col items-center mb-8">
