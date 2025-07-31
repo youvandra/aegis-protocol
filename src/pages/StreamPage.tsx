@@ -164,7 +164,7 @@ const StreamPage: React.FC = () => {
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-12 shadow-xl max-w-md">
                 <Wallet className="w-16 h-16 text-gray-400 mx-auto mb-6" />
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                  Wallet Required
+                  Transfer Streams
                 </h2>
                 <p className="text-gray-600 mb-8 leading-relaxed">
                   Stream management requires a connected wallet. 
