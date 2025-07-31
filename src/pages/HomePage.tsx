@@ -4,7 +4,6 @@ import Hero from '../components/Hero';
 const HomePage: React.FC = () => {
   return (
     <div className="relative">
-      {/* Background Image for Home Page Only */}
       <div 
         className="absolute inset-0 bg-[url('/bg.webp')] bg-no-repeat bg-center bg-fixed bg-[length:1920px_auto]"
       />
@@ -34,11 +33,13 @@ const HomePage: React.FC = () => {
                 permanent loss of assets upon an owner's death or incapacitation.
               </p>
             </div>
-          </div>
-        </div>
-      </div>
+            
     </div>
-    
+          
+    </div>
+        
+    </div>
+      
     </div>
   );
 };
