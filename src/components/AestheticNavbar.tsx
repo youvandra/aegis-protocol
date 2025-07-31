@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAccount, useDisconnect } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { DoorOpen } from 'lucide-react';
+import { useWalletTracking } from '../hooks/useWalletTracking';
 
 interface AestheticNavbarProps {
   leftLinkPath: string;
@@ -19,9 +20,10 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
   rightLinkPath,
   rightLinkText,
 }) => {
-  const { isConnected, address } = useAccount();
+  const { address } = useAccount();
   const { disconnect } = useDisconnect();
   const { open } = useWeb3Modal();
+  const { isConnected } = useWalletTracking();
 
   return (
     <nav className="w-full py-8 px-8">

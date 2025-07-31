@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useWalletTracking } from '../hooks/useWalletTracking';
 
 interface HeaderProps {
   isConnected: boolean;
@@ -7,6 +8,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ isConnected, onWalletRequired }) => {
+  // Track wallet connections automatically
+  useWalletTracking();
 
   return (
     <header className="w-full py-8 px-8">

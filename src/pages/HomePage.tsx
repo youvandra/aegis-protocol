@@ -1,11 +1,11 @@
 import React from 'react';
-import { useAccount } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
+import { useWalletTracking } from '../hooks/useWalletTracking';
 
 const HomePage: React.FC = () => {
-  const { isConnected } = useAccount();
+  const { isConnected } = useWalletTracking();
   const { open } = useWeb3Modal();
 
   const handleWalletRequired = () => {

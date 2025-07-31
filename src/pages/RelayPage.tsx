@@ -1,15 +1,15 @@
 import React from 'react';
 import { useState } from 'react';
 import { Plus, Send } from 'lucide-react';
-import { useAccount } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import AestheticNavbar from '../components/AestheticNavbar';
 import RelayTable from '../components/RelayTable';
 import CreateRelayModal from '../components/CreateRelayModal';
 import { RelayItem } from '../types/relay';
+import { useWalletTracking } from '../hooks/useWalletTracking';
 
 const RelayPage: React.FC = () => {
-  const { isConnected } = useAccount();
+  const { isConnected } = useWalletTracking();
   const { open } = useWeb3Modal();
   const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
   const [showCreateRelayModal, setShowCreateRelayModal] = useState(false);

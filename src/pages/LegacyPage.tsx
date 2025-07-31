@@ -1,6 +1,5 @@
 import React from 'react';
 import { useState } from 'react';
-import { useAccount } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { Shield, Clock } from 'lucide-react';
 import AestheticNavbar from '../components/AestheticNavbar';
@@ -9,9 +8,10 @@ import BeneficiariesDisplay from '../components/BeneficiariesDisplay';
 import SetMomentModal from '../components/SetMomentModal';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
+import { useWalletTracking } from '../hooks/useWalletTracking';
 
 const LegacyPage: React.FC = () => {
-  const { isConnected } = useAccount();
+  const { isConnected } = useWalletTracking();
   const { open } = useWeb3Modal();
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [legacyMoment, setLegacyMoment] = useState<LegacyMoment | null>(null);
