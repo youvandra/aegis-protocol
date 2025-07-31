@@ -126,7 +126,7 @@ export const walletAccountService = {
     try {
       const { data, error } = await supabase
         .from('wallet_accounts')
-        .select('count(*)')
+        .select('id')
         .limit(1);
 
       if (error) {
