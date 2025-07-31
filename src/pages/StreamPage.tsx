@@ -167,8 +167,8 @@ const StreamPage: React.FC = () => {
                   Transfer Streams
                 </h2>
                 <p className="text-gray-600 mb-8 leading-relaxed">
-                  Stream management requires a connected wallet. 
-                  Connect your wallet to create groups and manage scheduled distributions.
+                  Automate asset transfers with precise timing and logic.
+                  Stream wealth to the right people, exactly when it matters.
                 </p>
                 <button
                   onClick={() => open()}
