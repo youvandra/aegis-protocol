@@ -1,5 +1,5 @@
 import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
-import { mainnet, sepolia } from 'wagmi/chains'
+import { mainnet, sepolia, hedera } from 'wagmi/chains'
 
 // Get projectId from https://cloud.walletconnect.com
 export const projectId = 'dd6934ed03aeebf4d1a21fb001d7c1f3' // Replace with your actual project ID
