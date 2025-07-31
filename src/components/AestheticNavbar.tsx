@@ -64,33 +64,33 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
           </div>
         </div>
         
-        {/* Fixed Center Room Name */}
-        <div className="absolute top-8 left-1/2 -translate-x-1/2 text-4xl font-bold text-black">
-          <DoorOpen className="inline-block mr-3" size={32} />
-          <span>{roomName}</span>
-        </div>
-        
-        <div className="flex items-center justify-between text-black mb-4">
+        {/* Centered Navigation Group */}
+        <div className="flex items-center justify-center mt-4">
           {/* Left Navigation */}
           <Link 
             to={leftLinkPath}
-            className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200"
+            className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200 mr-8"
           >
             <span className="text-2xl">←</span>
             <span className="text-base font-medium">{leftLinkText}</span>
           </Link>
 
+          {/* Room Name */}
+          <div className="text-4xl font-bold text-black">
+            <DoorOpen className="inline-block mr-3" size={32} />
+            <span>{roomName}</span>
+          </div>
+
           {/* Right Navigation */}
           <Link 
             to={rightLinkPath}
-            className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200"
+            className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200 ml-8"
           >
             <span className="text-base font-medium">{rightLinkText}</span>
             <span className="text-2xl">→</span>
           </Link>
         </div>
 
-        
       </div>
     </nav>
   );
