@@ -1,12 +1,25 @@
 import React from 'react';
+import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { Shield } from 'lucide-react';
 import AestheticNavbar from '../components/AestheticNavbar';
+import SetBeneficiariesForm from '../components/SetBeneficiariesForm';
+import BeneficiariesDisplay from '../components/BeneficiariesDisplay';
+import { Beneficiary } from '../types/beneficiary';
 
 const LegacyPage: React.FC = () => {
   const { isConnected } = useAccount();
   const { open } = useWeb3Modal();
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
+
+  const handleAddBeneficiary = (beneficiaryData: Omit<Beneficiary, 'id'>) => {
+    const newBeneficiary: Beneficiary = {
+      ...beneficiaryData,
+      id: Date.now().toString(), // Simple ID generation
+    };
+    setBeneficiaries(prev => [...prev, newBeneficiary]);
+  };
 
   return (
     <div className="min-h-screen relative flex flex-col bg-[#D9D9D9]">
@@ -39,11 +52,19 @@ const LegacyPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="mb-20 text-center md:text-left">
-              {/* Legacy page content will go here */}
+            <div className="flex gap-8">
+              {/* Left Side - Set Beneficiaries Form */}
+              <div className="w-1/2">
+                <SetBeneficiariesForm onAddBeneficiary={handleAddBeneficiary} />
+              </div>
+              
+              {/* Right Side - Beneficiaries Display */}
+              <div className="w-1/2">
+                <BeneficiariesDisplay beneficiaries={beneficiaries} />
+              </div>
             </div>
           )}
-          </div>
+        </div>
       </main>
     </div>
   );
