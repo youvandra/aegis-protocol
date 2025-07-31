@@ -3,7 +3,7 @@ import Hero from '../components/Hero';
 
 const HomePage: React.FC = () => {
   return (
-    <div className="min-h-screen relative flex flex-col bg-[url('/bg.webp')] bg-no-repeat bg-center bg-fixed bg-[length:1920px_auto]">
+    <>
       <div className="flex-1">
         <Hero />
       </div>
@@ -29,7 +29,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
