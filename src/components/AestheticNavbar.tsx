@@ -99,6 +99,10 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
         {/* Wallet Connection - Right Side */}
         <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1 min-w-fit">
           {isConnected ? (
+      <button
+                onClick={() => disconnect()}
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline"
+              >
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
@@ -111,10 +115,7 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
                   </span>
                 )}
               </div>
-              <button
-                onClick={() => disconnect()}
-                className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline"
-              >
+              
               </button>
             </div>
           ) : (
