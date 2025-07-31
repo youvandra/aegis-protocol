@@ -50,17 +50,17 @@ const LegacyPage: React.FC = () => {
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-12 shadow-xl max-w-md">
                 <Shield className="w-16 h-16 text-gray-400 mx-auto mb-6" />
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                  Secure Access Required
+                  Secure My Legacy
                 </h2>
                 <p className="text-gray-600 mb-8 leading-relaxed">
-                  Legacy planning and inheritance features require wallet authentication. 
-                  Connect your wallet to access secure estate planning tools.
+                  Build a trustless legacy that activates when the time is right.
+                  No lawyers, no paperwork—just secure, automated distribution.
                 </p>
                 <button
                   onClick={() => open()}
                   className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
                 >
-                  Connect Wallet
+                  Set Beneficiary
                 </button>
               </div>
             </div>
