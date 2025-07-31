@@ -4,12 +4,12 @@ import { useAccount } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { Wallet, Plus, UserPlus } from 'lucide-react';
 import AestheticNavbar from '../components/AestheticNavbar';
-import ScheduleTable from '../components/ScheduleTable';
+import StreamTable from '../components/StreamTable';
 import CreateGroupModal from '../components/CreateGroupModal';
 import AddMemberModal from '../components/AddMemberModal';
 import { Group, Member } from '../types/schedule';
 
-const SchedulePage: React.FC = () => {
+const StreamPage: React.FC = () => {
   const { isConnected } = useAccount();
   const { open } = useWeb3Modal();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'released'>('upcoming');
@@ -153,7 +153,7 @@ const SchedulePage: React.FC = () => {
       <AestheticNavbar 
         leftLinkPath="/relay"
         leftLinkText="Relay"
-        roomName="Schedule"
+        roomName="Stream"
         rightLinkPath="/legacy"
         rightLinkText="Legacy"
       />
@@ -167,7 +167,7 @@ const SchedulePage: React.FC = () => {
                   Wallet Required
                 </h2>
                 <p className="text-gray-600 mb-8 leading-relaxed">
-                  Schedule management requires a connected wallet. 
+                  Stream management requires a connected wallet. 
                   Connect your wallet to create groups and manage scheduled distributions.
                 </p>
                 <button
@@ -227,7 +227,7 @@ const SchedulePage: React.FC = () => {
 
               {/* Table */}
               <div className="mb-8">
-                <ScheduleTable 
+                <StreamTable 
                   data={activeTab === 'upcoming' ? upcomingGroups : releasedGroups} 
                 />
               </div>
@@ -258,4 +258,4 @@ const SchedulePage: React.FC = () => {
   );
 };
 
-export default SchedulePage;
+export default StreamStreamPage;
