@@ -4,7 +4,7 @@ export interface RelayItem {
   type: 'receive' | 'send';
   amount: string;
   timeCreated: string;
-  status: '1 out of 3' | '2 out of 3' | '3 out of 3';
+  status: 'Request Initiated' | 'Waiting for Receiver\'s Approval' | 'Waiting for Sender to Execute' | 'Complete' | 'Rejected';
   details?: {
     fromAddress?: string;
     toAddress?: string;

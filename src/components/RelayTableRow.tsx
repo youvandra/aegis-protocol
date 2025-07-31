@@ -11,12 +11,16 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item }) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case '1 out of 3':
-        return 'text-red-600 bg-red-50';
-      case '2 out of 3':
+      case 'Request Initiated':
+        return 'text-blue-600 bg-blue-50';
+      case 'Waiting for Receiver\'s Approval':
         return 'text-yellow-600 bg-yellow-50';
-      case '3 out of 3':
+      case 'Waiting for Sender to Execute':
+        return 'text-orange-600 bg-orange-50';
+      case 'Complete':
         return 'text-green-600 bg-green-50';
+      case 'Rejected':
+        return 'text-red-600 bg-red-50';
       default:
         return 'text-gray-600 bg-gray-50';
     }

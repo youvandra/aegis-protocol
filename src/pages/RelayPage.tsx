@@ -16,7 +16,7 @@ const RelayPage: React.FC = () => {
       type: 'send',
       amount: '1,250.50 HBAR',
       timeCreated: '2025-01-27 14:30:25',
-      status: '1 out of 3',
+      status: 'Request Initiated',
       details: {
         toAddress: '0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c',
         transactionHash: '0x1234567890abcdef...',
@@ -29,7 +29,7 @@ const RelayPage: React.FC = () => {
       type: 'receive',
       amount: '500.00 HBAR',
       timeCreated: '2025-01-27 13:15:10',
-      status: '2 out of 3',
+      status: 'Waiting for Receiver\'s Approval',
       details: {
         fromAddress: '0x8ba1f109551bD432803012645Hac136c22C177ec',
         transactionHash: '0xabcdef1234567890...',
@@ -46,7 +46,7 @@ const RelayPage: React.FC = () => {
       type: 'send',
       amount: '2,000.00 HBAR',
       timeCreated: '2025-01-26 16:45:30',
-      status: '3 out of 3',
+      status: 'Complete',
       details: {
         toAddress: '0x9876543210fedcba...',
         transactionHash: '0xfedcba0987654321...',
@@ -59,7 +59,7 @@ const RelayPage: React.FC = () => {
       type: 'receive',
       amount: '750.25 HBAR',
       timeCreated: '2025-01-25 09:20:15',
-      status: '3 out of 3',
+      status: 'Complete',
       details: {
         fromAddress: '0x1357924680acebd...',
         transactionHash: '0x2468ace13579bdf...',
