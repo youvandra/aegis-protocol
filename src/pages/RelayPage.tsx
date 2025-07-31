@@ -31,7 +31,7 @@ const RelayPage: React.FC = () => {
       type: 'receive',
       amount: '500.00 HBAR',
       timeCreated: '2025-01-27 13:15:10',
-      status: 'Waiting for Sender to Execute',
+      status: 'Waiting for Receiver\'s Approval',
       details: {
         fromAddress: '0x8ba1f109551bD432803012645Hac136c22C177ec',
         transactionHash: '0xabcdef1234567890...',
