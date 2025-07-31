@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount, useDisconnect } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
+import { LayoutGrid } from 'lucide-react';
 
 interface AestheticNavbarProps {
   leftLinkPath: string;
@@ -38,7 +39,8 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
 
         {/* Center Room Name */}
         <div className="text-xl font-light">
-          Room: <span className="font-medium">{roomName}</span>
+          <LayoutGrid className="inline-block mr-2" size={20} />
+          <span className="font-medium">{roomName}</span>
         </div>
 
         {/* Right Navigation */}
