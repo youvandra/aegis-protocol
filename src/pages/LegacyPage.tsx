@@ -44,7 +44,6 @@ const LegacyPage: React.FC = () => {
             </div>
           )}
           </div>
-        </div>
       </main>
     </div>
   );
