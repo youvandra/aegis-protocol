@@ -43,7 +43,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       return;
     }
 
-    if (selectedGroupId && name.trim() && address.trim() && amount.trim()) {
+    if (selectedGroupId && name.trim() && memberAddress.trim() && amount.trim()) {
       onSubmit({
         groupId: selectedGroupId,
         name: name.trim(),
