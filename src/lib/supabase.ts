@@ -181,6 +181,11 @@ export const streamService = {
     releaseDate?: string
   ): Promise<Group | null> {
     try {
+      // Set wallet address in headers for RLS
+      const headers = {
+        'X-Wallet-Address': walletAddress.toLowerCase()
+      };
+      
       const { data, error } = await supabase
         .from('groups')
         .insert({
@@ -202,6 +207,7 @@ export const streamService = {
 
       return {
         ...data,
+        number: data.group_number,
         groupName: data.group_name,
         releaseDate: data.release_date,
         releaseType: data.release_type,
@@ -241,6 +247,7 @@ export const streamService = {
       // Transform the data to match the Group interface
       const transformedGroups: Group[] = groupsData.map(group => ({
         id: group.id,
+        number: group.group_number,
         group_number: group.group_number,
         group_name: group.group_name,
         release_date: group.release_date,
@@ -296,6 +303,7 @@ export const streamService = {
 
       if (error) {
         console.error('Error adding member:', error);
+        console.error('Error details:', error.message, error.details, error.hint);
         return null;
       }
 

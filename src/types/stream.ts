@@ -10,6 +10,7 @@ export interface Member {
 
 export interface Group {
   id: string;
+  number: string;
   group_number: string;
   group_name: string;
   release_date: string | null;
