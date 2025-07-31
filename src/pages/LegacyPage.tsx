@@ -14,9 +14,6 @@ const LegacyPage: React.FC = () => {
       <main className="flex-1 px-8 pt-0">
         <div className="max-w-7xl mx-auto">
           <div className="mb-20 text-center md:text-left">
-            <h1 className="text-7xl md:text-9xl font-light text-black tracking-tight leading-none">
-              <span className="font-normal">legacy</span>
-            </h1>
           </div>
         </div>
       </main>
