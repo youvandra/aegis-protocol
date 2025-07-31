@@ -55,7 +55,7 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({ onAddBenefi
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="John Doe"
+            placeholder="Adin Ilham"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
             required
           />
