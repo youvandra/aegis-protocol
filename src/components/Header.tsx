@@ -9,11 +9,8 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ isConnected, onWalletRequired }) => {
 
   const handleNavClick = (e: React.MouseEvent, path: string) => {
-    if ((path === '/data' || path === '/legacy' || path === '/relay') && !isConnected) {
+    if ((path === '/data' || path === '/legacy' || path === '/relay')) {
       e.preventDefault();
-      if (onWalletRequired) {
-        onWalletRequired();
-      }
     }
   };
 
