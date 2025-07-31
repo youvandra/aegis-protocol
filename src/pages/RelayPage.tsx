@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import AestheticNavbar from '../components/AestheticNavbar';
 import RelayTable from '../components/RelayTable';
+import CreateRelayModal from '../components/CreateRelayModal';
 import { RelayItem } from '../types/relay';
 
 const RelayPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
+  const [showCreateRelayModal, setShowCreateRelayModal] = useState(false);
 
   // Sample data for queue
   const queueData: RelayItem[] = [
@@ -69,8 +71,16 @@ const RelayPage: React.FC = () => {
   ];
 
   const handleCreateRelay = () => {
-    // TODO: Implement create relay functionality
-    console.log('Create relay clicked');
+    setShowCreateRelayModal(true);
+  };
+
+  const handleCloseCreateRelayModal = () => {
+    setShowCreateRelayModal(false);
+  };
+
+  const handleCreateRelaySubmit = (receiverAddress: string, amount: string) => {
+    // TODO: Implement actual relay creation logic
+    console.log('Creating relay:', { receiverAddress, amount });
   };
 
   return (
@@ -128,6 +138,13 @@ const RelayPage: React.FC = () => {
           </div>
         </div>
       </main>
+      
+      {/* Create Relay Modal */}
+      <CreateRelayModal
+        isOpen={showCreateRelayModal}
+        onClose={handleCloseCreateRelayModal}
+        onSubmit={handleCreateRelaySubmit}
+      />
     </div>
   );
 };
