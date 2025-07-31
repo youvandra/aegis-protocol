@@ -1,24 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAccount, useDisconnect } from 'wagmi';
-import { useWeb3Modal } from '@web3modal/wagmi/react';
 
 interface HeaderProps {
   onWalletRequired?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onWalletRequired }) => {
-  const { isConnected, address } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { open } = useWeb3Modal();
 
   const handleNavClick = (e: React.MouseEvent, path: string) => {
-    if (!isConnected && (path === '/data' || path === '/legacy' || path === '/relay')) {
+    if (path === '/data' || path === '/legacy' || path === '/relay') {
       e.preventDefault();
       if (onWalletRequired) {
         onWalletRequired();
-      } else {
-        open();
       }
     }
   };
@@ -37,49 +30,24 @@ const Header: React.FC<HeaderProps> = ({ onWalletRequired }) => {
           <Link 
             to="/data" 
             onClick={(e) => handleNavClick(e, '/data')}
-            className={`text-gray-800 hover:text-black transition-all duration-200 font-medium text-lg p-3 bg-white/80 backdrop-blur-sm rounded-r-lg shadow-lg hover:shadow-xl hover:bg-white/90 md:p-0 md:bg-transparent md:backdrop-blur-none md:rounded-none md:shadow-none md:hover:shadow-none md:hover:bg-transparent ${!isConnected ? 'cursor-pointer' : ''}`}
+            className="text-gray-800 hover:text-black transition-all duration-200 font-medium text-lg p-3 bg-white/80 backdrop-blur-sm rounded-r-lg shadow-lg hover:shadow-xl hover:bg-white/90 md:p-0 md:bg-transparent md:backdrop-blur-none md:rounded-none md:shadow-none md:hover:shadow-none md:hover:bg-transparent cursor-pointer"
           >
             Data
           </Link>
           <Link 
             to="/legacy" 
             onClick={(e) => handleNavClick(e, '/legacy')}
-            className={`text-gray-800 hover:text-black transition-all duration-200 font-medium text-lg p-3 bg-white/80 backdrop-blur-sm rounded-r-lg shadow-lg hover:shadow-xl hover:bg-white/90 md:p-0 md:bg-transparent md:backdrop-blur-none md:rounded-none md:shadow-none md:hover:shadow-none md:hover:bg-transparent ${!isConnected ? 'cursor-pointer' : ''}`}
+            className="text-gray-800 hover:text-black transition-all duration-200 font-medium text-lg p-3 bg-white/80 backdrop-blur-sm rounded-r-lg shadow-lg hover:shadow-xl hover:bg-white/90 md:p-0 md:bg-transparent md:backdrop-blur-none md:rounded-none md:shadow-none md:hover:shadow-none md:hover:bg-transparent cursor-pointer"
           >
             Legacy
           </Link>
           <Link 
             to="/relay" 
             onClick={(e) => handleNavClick(e, '/relay')}
-            className={`text-gray-800 hover:text-black transition-all duration-200 font-medium text-lg p-3 bg-white/80 backdrop-blur-sm rounded-r-lg shadow-lg hover:shadow-xl hover:bg-white/90 md:p-0 md:bg-transparent md:backdrop-blur-none md:rounded-none md:shadow-none md:hover:shadow-none md:hover:bg-transparent ${!isConnected ? 'cursor-pointer' : ''}`}
+            className="text-gray-800 hover:text-black transition-all duration-200 font-medium text-lg p-3 bg-white/80 backdrop-blur-sm rounded-r-lg shadow-lg hover:shadow-xl hover:bg-white/90 md:p-0 md:bg-transparent md:backdrop-blur-none md:rounded-none md:shadow-none md:hover:shadow-none md:hover:bg-transparent cursor-pointer"
           >
             Relay
           </Link>
-          
-          {/* Wallet Connection Status */}
-          <div className="p-3 bg-white/80 backdrop-blur-sm rounded-r-lg shadow-lg md:p-0 md:bg-transparent md:backdrop-blur-none md:rounded-none md:shadow-none">
-            {isConnected ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
-                </span>
-                <button
-                  onClick={() => disconnect()}
-                  className="text-xs text-gray-500 hover:text-gray-700 ml-2"
-                >
-                  Disconnect
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => open()}
-                className="text-sm text-gray-600 hover:text-black transition-colors duration-200 font-medium"
-              >
-                Connect Wallet
-              </button>
-            )}
-          </div>
         </div>
       </nav>
     </header>
