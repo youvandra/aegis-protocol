@@ -33,13 +33,9 @@ const HomePage: React.FC = () => {
                 permanent loss of assets upon an owner's death or incapacitation.
               </p>
             </div>
-            
     </div>
-          
     </div>
-        
     </div>
-      
     </div>
   );
 };
