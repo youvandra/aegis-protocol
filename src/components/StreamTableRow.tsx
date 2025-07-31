@@ -51,7 +51,7 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group }) => {
           </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-          {group.groupName}
+          {group.group_name || group.groupName}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
           <div className="flex items-center">
@@ -60,14 +60,14 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group }) => {
             ) : (
               <Calendar className="w-4 h-4 mr-2 text-gray-600" />
             )}
-            {formatReleaseDate(group.releaseType, group.releaseDate)}
+            {formatReleaseDate(group.release_type || group.releaseType, group.release_date || group.releaseDate)}
           </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-          {group.totalMembers}
+          {group.total_members || group.totalMembers || 0}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-          {group.totalAmount}
+          {group.total_amount || group.totalAmount || 0}
         </td>
       </tr>
       {isExpanded && (

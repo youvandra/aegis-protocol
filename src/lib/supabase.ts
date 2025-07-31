@@ -179,11 +179,8 @@ export const streamService = {
     releaseType: 'monthly' | 'one-time',
     walletAddress: string,
     releaseDate?: string
-  ): Promise<any | null> {
+  ): Promise<Group | null> {
     try {
-      // Set wallet auth context before making the request
-      setWalletAuthContext(walletAddress);
-      
       const { data, error } = await supabase
         .from('groups')
         .insert({
@@ -203,22 +200,26 @@ export const streamService = {
         return null;
       }
 
-      return data;
+      return {
+        ...data,
+        groupName: data.group_name,
+        releaseDate: data.release_date,
+        releaseType: data.release_type,
+        totalMembers: data.total_members,
+        totalAmount: data.total_amount,
+        members: []
+      };
     } catch (error) {
       console.error('Error in createGroup:', error);
       return null;
     }
   },
 
-  async getGroups(walletAddress: string): Promise<any[]> {
+  async getGroups(walletAddress: string): Promise<Group[]> {
     try {
-      // Set wallet auth context before making the request
-      setWalletAuthContext(walletAddress);
-      
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
         .select('*')
-        .eq('wallet_address', walletAddress.toLowerCase())
         .order('created_at', { ascending: false });
 
       if (groupsError) {
@@ -236,7 +237,8 @@ export const streamService = {
           const { data: membersData, error: membersError } = await supabase
             .from('members')
             .select('*')
-            .eq('group_id', group.id);
+            .eq('group_id', group.id)
+            .order('created_at', { ascending: true });
 
           if (membersError) {
             console.error('Error fetching members for group:', group.id, membersError);
@@ -245,6 +247,11 @@ export const streamService = {
 
           return {
             ...group,
+            groupName: group.group_name,
+            releaseDate: group.release_date,
+            releaseType: group.release_type,
+            totalMembers: group.total_members,
+            totalAmount: group.total_amount,
             members: membersData || []
           };
         })
@@ -262,11 +269,8 @@ export const streamService = {
     name: string,
     walletAddress: string,
     amount: number
-  ): Promise<any | null> {
+  ): Promise<Member | null> {
     try {
-      // Set wallet auth context before making the request
-      setWalletAuthContext(walletAddress);
-      
       const { data, error } = await supabase
         .from('members')
         .insert({

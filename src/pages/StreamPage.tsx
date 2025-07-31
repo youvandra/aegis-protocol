@@ -19,14 +19,20 @@ const StreamPage: React.FC = () => {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
   const loadGroups = async () => {
-    if (!address) return;
+    if (!address) {
+      setGroups([]);
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
       const groupsData = await streamService.getGroups(address);
+      console.log('Loaded groups:', groupsData);
       setGroups(groupsData);
     } catch (error) {
       console.error('Error loading groups:', error);
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -52,6 +58,7 @@ const StreamPage: React.FC = () => {
     if (!address) return;
     
     try {
+      console.log('Creating group with data:', groupData);
       const newGroup = await streamService.createGroup(
         groupData.groupName,
         groupData.releaseType,
@@ -60,9 +67,11 @@ const StreamPage: React.FC = () => {
       );
       
       if (newGroup) {
+        console.log('Group created successfully:', newGroup);
         await loadGroups();
         setShowCreateGroupModal(false);
       } else {
+        console.error('Failed to create group - no data returned');
         alert('Failed to create group. Please try again.');
       }
     } catch (error) {
@@ -74,21 +83,24 @@ const StreamPage: React.FC = () => {
   const handleAddMember = async (memberData: {
     groupId: string;
     name: string;
-    walletAddress: string;
-    amount: number;
+    address: string;
+    amount: string;
   }) => {
     try {
+      console.log('Adding member with data:', memberData);
       const newMember = await streamService.addMemberToGroup(
         memberData.groupId,
         memberData.name,
-        memberData.walletAddress,
+        memberData.address,
         Number(memberData.amount)
       );
       
       if (newMember) {
+        console.log('Member added successfully:', newMember);
         await loadGroups();
         setShowAddMemberModal(false);
       } else {
+        console.error('Failed to add member - no data returned');
         alert('Failed to add member. Please try again.');
       }
     } catch (error) {
