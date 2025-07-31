@@ -84,19 +84,9 @@ const RelayPage: React.FC = () => {
       />
       <main className="flex-1 px-8 pt-0 pb-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header with Create Button */}
-          <div className="mb-8 flex justify-between items-start">
-            <button
-              onClick={handleCreateRelay}
-              className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 flex items-center space-x-2 font-medium"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Create Relay</span>
-            </button>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="mb-6">
+          {/* Header with Tabs and Create Button */}
+          <div className="mb-8 flex justify-between items-center">
+            {/* Tab Navigation */}
             <div className="flex space-x-1 bg-white/80 backdrop-blur-sm rounded-lg p-1 w-fit">
               <button
                 onClick={() => setActiveTab('queue')}
@@ -119,6 +109,15 @@ const RelayPage: React.FC = () => {
                 History
               </button>
             </div>
+            
+            {/* Create Button */}
+            <button
+              onClick={handleCreateRelay}
+              className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 flex items-center space-x-2 font-medium"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Create Relay</span>
+            </button>
           </div>
 
           {/* Table */}
