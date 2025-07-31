@@ -144,7 +144,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
               id="memberName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
+              placeholder="Michael Jordan"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
               required
             />
