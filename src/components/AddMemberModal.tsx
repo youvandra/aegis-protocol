@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, UserPlus, Plus } from 'lucide-react';
-import { Group } from '../types/schedule';
+import { Group } from '../types/stream';
 
 interface AddMemberModalProps {
   isOpen: boolean;
