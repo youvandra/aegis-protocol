@@ -60,7 +60,7 @@ const LegacyPage: React.FC = () => {
                   onClick={() => open()}
                   className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
                 >
-                  Set Beneficiary
+                  Set Beneficiaries
                 </button>
               </div>
             </div>
