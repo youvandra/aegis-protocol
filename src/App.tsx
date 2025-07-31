@@ -18,14 +18,12 @@ function App() {
       <div className="relative z-10 flex flex-col min-h-screen">
         <BrowserRouter>
           <Header />
-          <div className="pt-28">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/data" element={<DataPage />} />
-              <Route path="/legacy" element={<LegacyPage />} />
-              <Route path="/relay" element={<RelayPage />} />
-            </Routes>
-          </div>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/data" element={<DataPage />} />
+            <Route path="/legacy" element={<LegacyPage />} />
+            <Route path="/relay" element={<RelayPage />} />
+          </Routes>
         </BrowserRouter>
       </div>
     </div>
