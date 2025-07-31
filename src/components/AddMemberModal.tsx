@@ -47,7 +47,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       onSubmit({
         groupId: selectedGroupId,
         name: name.trim(),
-        address: memberAddress.trim(),
+        memberAddress: memberAddress.trim(),
         amount: amount.trim(),
       });
       
