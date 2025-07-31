@@ -2,7 +2,6 @@ import React from 'react';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
-import WalletDebugInfo from '../components/WalletDebugInfo';
 import { useWalletTracking } from '../hooks/useWalletTracking';
 
 const HomePage: React.FC = () => {
@@ -16,16 +15,6 @@ const HomePage: React.FC = () => {
   return (
     <>
       <Header isConnected={isConnected} onWalletRequired={handleWalletRequired} />
-      
-      {/* Debug Info - Remove this in production */}
-      {isConnected && (
-        <div className="px-8">
-          <div className="max-w-7xl mx-auto">
-            <WalletDebugInfo />
-          </div>
-        </div>
-      )}
-      
       <div className="flex-1">
         <Hero />
       </div>
