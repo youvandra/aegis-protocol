@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Calendar, Repeat } from 'lucide-react';
-import { Group } from '../types/schedule';
+import { Group } from '../types/stream';
 
-interface ScheduleTableRowProps {
+interface StreamTableRowProps {
   group: Group;
 }
 
-const ScheduleTableRow: React.FC<ScheduleTableRowProps> = ({ group }) => {
+const StreamTableRow: React.FC<StreamTableRowProps> = ({ group }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getStatusColor = (status: string) => {
@@ -102,4 +102,4 @@ const ScheduleTableRow: React.FC<ScheduleTableRowProps> = ({ group }) => {
   );
 };
 
-export default ScheduleTableRow;
+export default StreamTableRow;
