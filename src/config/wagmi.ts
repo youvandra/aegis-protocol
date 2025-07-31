@@ -2,7 +2,7 @@ import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
 import { mainnet, sepolia } from 'wagmi/chains'
 
 // Get projectId from https://cloud.walletconnect.com
-export const projectId = 'YOUR_PROJECT_ID' // Replace with your actual project ID
+export const projectId = 'dd6934ed03aeebf4d1a21fb001d7c1f3' // Replace with your actual project ID
 
 const metadata = {
   name: 'Aegis Protocol',
