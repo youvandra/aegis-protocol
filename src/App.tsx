@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import DataPage from './pages/DataPage';
 import LegacyPage from './pages/LegacyPage';
@@ -17,7 +16,6 @@ function App() {
       {/* Content Layer */}
       <div className="relative z-10 flex flex-col min-h-screen">
         <BrowserRouter>
-          <Header />
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/data" element={<DataPage />} />
