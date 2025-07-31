@@ -4,8 +4,12 @@ const Header: React.FC = () => {
   return (
     <header className="w-full py-8 px-8">
       <nav className="flex items-center justify-between max-w-7xl mx-auto">
-        <div className="text-2xl font-bold text-black">
-          AP
+        <div className="flex items-center">
+          <img 
+            src="/logoap.png" 
+            alt="Aegis Protocol" 
+            className="h-8 w-auto"
+          />
         </div>
         <div className="fixed left-0 top-1/2 -translate-y-1/2 flex flex-col items-start space-y-3 md:static md:flex-row md:items-center md:space-x-12 md:space-y-0">
           <a 
