@@ -1,9 +1,8 @@
 import React from 'react';
-import HeaderBlank from '../components/HeaderBlank';
 
 const RelayPage: React.FC = () => {
   return (
-    <HeaderBlank>
+    <div className="min-h-screen relative flex flex-col bg-[#D9D9D9]">
       <main className="flex-1 px-8 pt-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-20 text-center md:text-left">
@@ -13,7 +12,7 @@ const RelayPage: React.FC = () => {
           </div>
         </div>
       </main>
-    </HeaderBlank>
+    </div>
   );
 };
 
