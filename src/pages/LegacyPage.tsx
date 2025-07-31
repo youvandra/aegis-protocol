@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { Shield, Clock } from 'lucide-react';
 import AestheticNavbar from '../components/AestheticNavbar';
