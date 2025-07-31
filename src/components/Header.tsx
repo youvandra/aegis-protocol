@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const Header: React.FC = () => {
   return (
-    <header className="w-full py-8 px-8">
+    <header className="fixed top-0 w-full z-50 bg-black/20 backdrop-blur-md py-8 px-8">
       <nav className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center">
           <img 
