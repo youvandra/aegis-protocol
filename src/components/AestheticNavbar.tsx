@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useBalance } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { DoorOpen } from 'lucide-react';
 import { useWalletTracking } from '../hooks/useWalletTracking';
@@ -24,6 +24,10 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
   const { disconnect } = useDisconnect();
   const { open } = useWeb3Modal();
   const { isConnected } = useWalletTracking();
+  
+  const { data: balance } = useBalance({
+    address: address,
+  });
 
   return (
     <nav className="w-full py-8 px-8">
@@ -93,13 +97,20 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
         </div>
         
         {/* Wallet Connection - Right Side */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1">
+        <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1 min-w-fit">
           {isConnected ? (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-xs sm:text-sm text-gray-700 font-medium">
-                {address?.slice(0, 6)}...{address?.slice(-4)}
-              </span>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                <span className="text-xs sm:text-sm text-gray-700 font-medium">
+                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                </span>
+                {balance && (
+                  <span className="text-xs text-gray-600 font-mono">
+                    {parseFloat(balance.formatted).toFixed(2)} {balance.symbol}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => disconnect()}
                 className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline"
