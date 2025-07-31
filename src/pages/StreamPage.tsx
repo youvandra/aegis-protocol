@@ -160,7 +160,7 @@ const StreamPage: React.FC = () => {
       <main className="flex-1 px-4 sm:px-8 pt-0">
         <div className="max-w-7xl mx-auto">
           {!isConnected ? (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-12 shadow-xl max-w-md">
                 <Wallet className="w-16 h-16 text-gray-400 mx-auto mb-6" />
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">
@@ -181,7 +181,7 @@ const StreamPage: React.FC = () => {
           ) : (
             <>
               {/* Header with Tabs and Action Buttons */}
-              <div className="mb-8 flex justify-between items-center">
+              <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {/* Tab Navigation */}
                 <div className="flex space-x-1 bg-white/80 backdrop-blur-sm rounded-lg p-1 w-fit">
                   <button

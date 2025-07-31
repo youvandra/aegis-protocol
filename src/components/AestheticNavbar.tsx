@@ -37,7 +37,7 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
         </Link>
         
         {/* Centered Navigation Group */}
-        <div className="flex items-center">
+        <div className="hidden md:flex items-center">
           {/* Left Navigation */}
           <Link 
             to={leftLinkPath}
@@ -63,17 +63,44 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
           </Link>
         </div>
         
+        {/* Mobile Navigation */}
+        <div className="md:hidden flex items-center justify-center flex-1">
+          <div className="text-2xl font-bold text-black flex items-center">
+            <DoorOpen className="mr-2" size={24} />
+            <span>{roomName}</span>
+          </div>
+        </div>
+        
+        {/* Mobile Navigation Links */}
+        <div className="md:hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg">
+          <Link 
+            to={leftLinkPath}
+            className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200"
+          >
+            <span className="text-lg">←</span>
+            <span className="text-sm font-medium">{leftLinkText}</span>
+          </Link>
+          <div className="w-px h-4 bg-gray-300"></div>
+          <Link 
+            to={rightLinkPath}
+            className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200"
+          >
+            <span className="text-sm font-medium">{rightLinkText}</span>
+            <span className="text-lg">→</span>
+          </Link>
+        </div>
+        
         {/* Wallet Connection - Right Side */}
         <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1">
           {isConnected ? (
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-700 font-medium">
+              <span className="text-xs sm:text-sm text-gray-700 font-medium">
                 {address?.slice(0, 6)}...{address?.slice(-4)}
               </span>
               <button
                 onClick={() => disconnect()}
-                className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline"
               >
                 Disconnect
               </button>
@@ -81,7 +108,7 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
           ) : (
             <button
               onClick={() => open()}
-              className="text-sm text-gray-700 hover:text-black transition-colors duration-200 font-medium"
+              className="text-xs sm:text-sm text-gray-700 hover:text-black transition-colors duration-200 font-medium"
             >
               Connect Wallet
             </button>
