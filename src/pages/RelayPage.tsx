@@ -93,8 +93,8 @@ const RelayPage: React.FC = () => {
         leftLinkPath="/legacy"
         leftLinkText="Legacy"
         roomName="Relay"
-        rightLinkPath="/schedule"
-        rightLinkText="Schedule"
+        rightLinkPath="/stream"
+        rightLinkText="Stream"
       />
       <main className="flex-1 px-8 pt-0 pb-8">
         <div className="max-w-7xl mx-auto">
