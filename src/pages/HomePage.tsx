@@ -1,11 +1,18 @@
 import React from 'react';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
 
 const HomePage: React.FC = () => {
+  const { open } = useWeb3Modal();
+
+  const handleWalletRequired = () => {
+    open();
+  };
+
   return (
     <>
-      <Header />
+      <Header onWalletRequired={handleWalletRequired} />
       <div className="flex-1">
         <Hero />
       </div>
