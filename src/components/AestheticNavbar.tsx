@@ -100,14 +100,14 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
         <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1 min-w-fit">
           {isConnected ? (
             <div className="flex items-center space-x-3">
-              <button
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                <button
                 onClick={() => disconnect()}
                 className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline"
               >
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                 <span className="text-xs sm:text-sm text-gray-700 font-medium">
-                  {address?.slice(0, 2)}...{address?.slice(-4)}
+                  {address?.slice(0, 6)}...{address?.slice(-4)}
                 </span>
                 {balance && (
                   <span className="text-xs text-gray-600 font-mono">
