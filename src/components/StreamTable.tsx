@@ -1,8 +1,8 @@
 import React from 'react';
-import ScheduleTableRow from './StreamTableRow';
+import StreamTableRow from './StreamTableRow';
 import { Group } from '../types/stream';
 
-interface ScheduleTableProps {
+interface StreamTableProps {
   data: Group[];
 }
 
