@@ -10,6 +10,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Set up auth context for wallet-based authentication
+export const setWalletAuthContext = (walletAddress: string) => {
+  // Set the wallet address in the auth context for RLS policies
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (!session) {
+      // Create a custom JWT claim for wallet address
+      const customClaims = {
+        wallet_address: walletAddress.toLowerCase()
+      };
+      
+      // Set the custom claims in the request context
+      supabase.rest.headers = {
+        ...supabase.rest.headers,
+        'X-Wallet-Address': walletAddress.toLowerCase()
+      };
+    }
+  });
+};
+
 // User interface for the database
 export interface User {
   id: string;
@@ -162,6 +181,9 @@ export const streamService = {
     releaseDate?: string
   ): Promise<any | null> {
     try {
+      // Set wallet auth context before making the request
+      setWalletAuthContext(walletAddress);
+      
       const { data, error } = await supabase
         .from('groups')
         .insert({
@@ -190,6 +212,9 @@ export const streamService = {
 
   async getGroups(walletAddress: string): Promise<any[]> {
     try {
+      // Set wallet auth context before making the request
+      setWalletAuthContext(walletAddress);
+      
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
         .select('*')
@@ -239,6 +264,9 @@ export const streamService = {
     amount: number
   ): Promise<any | null> {
     try {
+      // Set wallet auth context before making the request
+      setWalletAuthContext(walletAddress);
+      
       const { data, error } = await supabase
         .from('members')
         .insert({
