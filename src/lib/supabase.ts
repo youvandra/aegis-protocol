@@ -4,7 +4,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -22,14 +22,22 @@ export interface WalletAccount {
 export const walletAccountService = {
   async upsertWalletAccount(walletAddress: string): Promise<WalletAccount | null> {
     try {
+      console.log('Attempting to upsert wallet account:', walletAddress);
+      
       // First, try to get existing account
-      const { data: existingAccount } = await supabase
+      const { data: existingAccount, error: selectError } = await supabase
         .from('wallet_accounts')
         .select('*')
         .eq('wallet_address', walletAddress)
-        .single();
+        .maybeSingle();
+
+      if (selectError) {
+        console.error('Error checking existing wallet account:', selectError);
+        return null;
+      }
 
       if (existingAccount) {
+        console.log('Updating existing wallet account:', existingAccount.id);
         // Update existing account
         const { data, error } = await supabase
           .from('wallet_accounts')
@@ -45,8 +53,11 @@ export const walletAccountService = {
           console.error('Error updating wallet account:', error);
           return null;
         }
+        
+        console.log('Successfully updated wallet account:', data);
         return data;
       } else {
+        console.log('Creating new wallet account for:', walletAddress);
         // Create new account
         const { data, error } = await supabase
           .from('wallet_accounts')
@@ -63,10 +74,12 @@ export const walletAccountService = {
           console.error('Error creating wallet account:', error);
           return null;
         }
+        
+        console.log('Successfully created wallet account:', data);
         return data;
       }
     } catch (error) {
-      console.error('Error in upsertWalletAccount:', error);
+      console.error('Unexpected error in upsertWalletAccount:', error);
       return null;
     }
   },
@@ -77,7 +90,7 @@ export const walletAccountService = {
         .from('wallet_accounts')
         .select('*')
         .eq('wallet_address', walletAddress)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching wallet account:', error);
@@ -105,6 +118,27 @@ export const walletAccountService = {
     } catch (error) {
       console.error('Error in getAllWalletAccounts:', error);
       return [];
+    }
+  },
+
+  // Test connection to Supabase
+  async testConnection(): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('wallet_accounts')
+        .select('count(*)')
+        .limit(1);
+
+      if (error) {
+        console.error('Supabase connection test failed:', error);
+        return false;
+      }
+      
+      console.log('Supabase connection test successful');
+      return true;
+    } catch (error) {
+      console.error('Supabase connection test error:', error);
+      return false;
     }
   }
 };
