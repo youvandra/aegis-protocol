@@ -151,4 +151,113 @@ export const walletAccountService = {
       return false;
     }
   }
-}
+
+// Stream service for managing groups and members
+export const streamService = {
+  async createGroup(
+    groupName: string,
+    releaseType: 'monthly' | 'one-time',
+    walletAddress: string,
+    releaseDate?: string
+  ): Promise<any | null> {
+    try {
+      const { data, error } = await supabase
+        .from('groups')
+        .insert({
+          group_name: groupName,
+          release_type: releaseType,
+          release_date: releaseDate || null,
+          wallet_address: walletAddress.toLowerCase(),
+          total_members: 0,
+          total_amount: 0,
+          status: 'upcoming'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating group:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in createGroup:', error);
+      return null;
+    }
+  },
+
+  async getGroups(walletAddress: string): Promise<any[]> {
+    try {
+      const { data: groupsData, error: groupsError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('wallet_address', walletAddress.toLowerCase())
+        .order('created_at', { ascending: false });
+
+      if (groupsError) {
+        console.error('Error fetching groups:', groupsError);
+        return [];
+      }
+
+      if (!groupsData || groupsData.length === 0) {
+        return [];
+      }
+
+      // Fetch members for each group
+      const groupsWithMembers = await Promise.all(
+        groupsData.map(async (group) => {
+          const { data: membersData, error: membersError } = await supabase
+            .from('members')
+            .select('*')
+            .eq('group_id', group.id);
+
+          if (membersError) {
+            console.error('Error fetching members for group:', group.id, membersError);
+            return { ...group, members: [] };
+          }
+
+          return {
+            ...group,
+            members: membersData || []
+          };
+        })
+      );
+
+      return groupsWithMembers;
+    } catch (error) {
+      console.error('Error in getGroups:', error);
+      return [];
+    }
+  },
+
+  async addMemberToGroup(
+    groupId: string,
+    name: string,
+    walletAddress: string,
+    amount: number
+  ): Promise<any | null> {
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .insert({
+          group_id: groupId,
+          name: name,
+          wallet_address: walletAddress.toLowerCase(),
+          amount: amount
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding member:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in addMemberToGroup:', error);
+      return null;
+    }
+  }
+};

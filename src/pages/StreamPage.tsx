@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { Wallet, Plus, UserPlus } from 'lucide-react';
 import AestheticNavbar from '../components/AestheticNavbar';
@@ -8,93 +8,45 @@ import CreateGroupModal from '../components/CreateGroupModal';
 import AddMemberModal from '../components/AddMemberModal';
 import { Group, Member } from '../types/stream';
 import { useWalletTracking } from '../hooks/useWalletTracking';
+import { streamService } from '../lib/supabase';
 
 const StreamPage: React.FC = () => {
-  const { isConnected } = useWalletTracking();
+  const { isConnected, address } = useWalletTracking();
   const { open } = useWeb3Modal();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'released'>('upcoming');
-  const [groups, setGroups] = useState<Group[]>([
-    {
-      id: '1',
-      number: 'GRP-001',
-      groupName: 'Family Trust Fund',
-      releaseDate: '2025-12-25',
-      releaseType: 'one-time',
-      totalMembers: 2,
-      totalAmount: '5,000.00 HBAR',
-      status: 'upcoming',
-      members: [
-        {
-          id: '1',
-          name: 'Alice Johnson',
-          address: '0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c',
-          amount: '3,000.00 HBAR'
-        },
-        {
-          id: '2',
-          name: 'Bob Smith',
-          address: '0x8ba1f109551bD432803012645Hac136c22C177ec',
-          amount: '2,000.00 HBAR'
-        }
-      ]
-    },
-    {
-      id: '2',
-      number: 'GRP-002',
-      groupName: 'Monthly Allowance',
-      releaseDate: '',
-      releaseType: 'monthly',
-      totalMembers: 1,
-      totalAmount: '500.00 HBAR',
-      status: 'upcoming',
-      members: [
-        {
-          id: '3',
-          name: 'Charlie Brown',
-          address: '0x9876543210fedcba1234567890abcdef12345678',
-          amount: '500.00 HBAR'
-        }
-      ]
-    },
-    {
-      id: '3',
-      number: 'GRP-003',
-      groupName: 'Emergency Fund',
-      releaseDate: '2024-06-15',
-      releaseType: 'one-time',
-      totalMembers: 3,
-      totalAmount: '10,000.00 HBAR',
-      status: 'released',
-      members: [
-        {
-          id: '4',
-          name: 'David Wilson',
-          address: '0x1357924680acebd1357924680acebd1357924680',
-          amount: '4,000.00 HBAR'
-        },
-        {
-          id: '5',
-          name: 'Eva Martinez',
-          address: '0x2468ace13579bdf2468ace13579bdf2468ace135',
-          amount: '3,500.00 HBAR'
-        },
-        {
-          id: '6',
-          name: 'Frank Davis',
-          address: '0x369cf258ad147bf369cf258ad147bf369cf258ad1',
-          amount: '2,500.00 HBAR'
-        }
-      ]
-    }
-  ]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+
+  const loadGroups = async () => {
+    if (!address) return;
+    
+    setLoading(true);
+    try {
+      const groupsData = await streamService.getGroups(address);
+      setGroups(groupsData);
+    } catch (error) {
+      console.error('Error loading groups:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (address) {
+      loadGroups();
+    } else {
+      setGroups([]);
+      setLoading(false);
+    }
+  }, [address]);
 
   const upcomingGroups = groups.filter(group => group.status === 'upcoming');
   const releasedGroups = groups.filter(group => group.status === 'released');
 
   const handleCreateGroup = async (groupData: {
-    group_name: string;
+    groupName: string;
     releaseType: 'monthly' | 'one-time';
     releaseDate?: string;
   }) => {
@@ -102,14 +54,14 @@ const StreamPage: React.FC = () => {
     
     try {
       const newGroup = await streamService.createGroup(
-        groupData.group_name,
+        groupData.groupName,
         groupData.releaseType,
         address,
         groupData.releaseDate
       );
       
       if (newGroup) {
-        setGroups(prev => [newGroup, ...prev]);
+        await loadGroups();
         setShowCreateGroupModal(false);
       } else {
         alert('Failed to create group. Please try again.');
@@ -123,19 +75,18 @@ const StreamPage: React.FC = () => {
   const handleAddMember = async (memberData: {
     groupId: string;
     name: string;
-    address: string;
+    walletAddress: string;
     amount: number;
   }) => {
     try {
       const newMember = await streamService.addMemberToGroup(
         memberData.groupId,
         memberData.name,
-        memberData.address,
-        memberData.amount
+        memberData.walletAddress,
+        Number(memberData.amount)
       );
       
       if (newMember) {
-        // Reload groups to get updated totals
         await loadGroups();
         setShowAddMemberModal(false);
       } else {
