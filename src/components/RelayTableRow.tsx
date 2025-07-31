@@ -30,6 +30,16 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item }) => {
     return type === 'receive' ? 'text-blue-600 bg-blue-50' : 'text-purple-600 bg-purple-50';
   };
 
+  const handleCancel = () => {
+    // TODO: Implement cancel functionality
+    console.log('Cancel relay:', item.id);
+  };
+
+  const handleExecute = () => {
+    // TODO: Implement execute functionality
+    console.log('Execute relay:', item.id);
+  };
+
   return (
     <>
       <tr 
@@ -62,10 +72,34 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item }) => {
             {item.status}
           </span>
         </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          {item.status === 'Waiting for Receiver\'s Approval' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCancel();
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+            >
+              Cancel
+            </button>
+          )}
+          {item.status === 'Waiting for Sender to Execute' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleExecute();
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+            >
+              Execute
+            </button>
+          )}
+        </td>
       </tr>
       {isExpanded && (
         <tr className="bg-gray-50">
-          <td colSpan={5} className="px-6 py-4">
+          <td colSpan={6} className="px-6 py-4">
             <div className="space-y-2 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 {item.details?.fromAddress && (
