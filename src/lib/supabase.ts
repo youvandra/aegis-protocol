@@ -151,6 +151,7 @@ export const walletAccountService = {
       return false;
     }
   }
+}
 
 // Stream service for managing groups and members
 export const streamService = {
