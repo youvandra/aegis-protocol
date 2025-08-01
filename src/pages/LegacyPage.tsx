@@ -216,6 +216,15 @@ const LegacyPage: React.FC = () => {
         onSubmit={handleSetMomentSubmit}
         currentMoment={legacyMoment}
       />
+      
+      {/* Edit Beneficiary Modal */}
+      <EditBeneficiaryModal
+        isOpen={showEditBeneficiaryModal}
+        onClose={handleCloseEditBeneficiaryModal}
+        onSubmit={handleUpdateBeneficiary}
+        beneficiary={editingBeneficiary}
+        currentTotalPercentage={currentTotalPercentage}
+      />
     </div>
   );
 };
