@@ -312,6 +312,7 @@ const LegacyPage: React.FC = () => {
                   onAddBeneficiary={handleAddBeneficiary}
                   loading={loading}
                   currentTotalPercentage={currentTotalPercentage}
+                  existingBeneficiaries={beneficiaries}
                 />
               </div>
               
@@ -378,6 +379,7 @@ const LegacyPage: React.FC = () => {
           message={toastMessage}
           type={toastType}
           onClose={() => setShowToast(false)}
+          existingBeneficiaries={beneficiaries}
         />
       )}
     </div>

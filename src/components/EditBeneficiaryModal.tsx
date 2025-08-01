@@ -8,6 +8,7 @@ interface EditBeneficiaryModalProps {
   onSubmit: (beneficiaryId: string, beneficiaryData: Omit<Beneficiary, 'id'>) => void;
   beneficiary: Beneficiary | null;
   currentTotalPercentage: number;
+  existingBeneficiaries?: Beneficiary[];
 }
 
 const EditBeneficiaryModal: React.FC<EditBeneficiaryModalProps> = ({ 
@@ -15,13 +16,18 @@ const EditBeneficiaryModal: React.FC<EditBeneficiaryModalProps> = ({
   onClose, 
   onSubmit, 
   beneficiary,
-  currentTotalPercentage
+  currentTotalPercentage,
+  existingBeneficiaries = []
 }) => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [percentage, setPercentage] = useState('');
   const [notes, setNotes] = useState('');
 
+  // Check if address already exists in other beneficiaries (excluding current one)
+  const isDuplicateAddress = address.trim() && beneficiary && existingBeneficiaries.some(
+    b => b.id !== beneficiary.id && b.address.toLowerCase() === address.trim().toLowerCase()
+  );
   // Update form when beneficiary changes
   useEffect(() => {
     if (beneficiary) {
@@ -36,6 +42,12 @@ const EditBeneficiaryModal: React.FC<EditBeneficiaryModalProps> = ({
     e.preventDefault();
     
     if (!beneficiary) return;
+    
+    // Check for duplicate address
+    if (isDuplicateAddress) {
+      alert('This wallet address is already used by another beneficiary. Please use a different address.');
+      return;
+    }
     
     const percentageNum = parseFloat(percentage);
     if (isNaN(percentageNum) || percentageNum <= 0 || percentageNum > 100) {
@@ -131,9 +143,21 @@ const EditBeneficiaryModal: React.FC<EditBeneficiaryModalProps> = ({
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 font-mono text-sm"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 font-mono text-sm ${
+                isDuplicateAddress
+                  ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                  : 'border-gray-300 focus:ring-black'
+              }`}
               required
             />
+            {isDuplicateAddress && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-xs text-red-700 flex items-center">
+                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                  This address is already used by another beneficiary. Please use a different address.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Percentage Input */}
@@ -229,7 +253,12 @@ const EditBeneficiaryModal: React.FC<EditBeneficiaryModalProps> = ({
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors duration-200 font-medium"
+              disabled={isDuplicateAddress}
+              className={`flex-1 px-4 py-2 rounded-md transition-colors duration-200 font-medium ${
+                isDuplicateAddress
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
             >
               Update Beneficiary
             </button>

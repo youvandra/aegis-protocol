@@ -6,20 +6,32 @@ interface SetBeneficiariesFormProps {
   onAddBeneficiary: (beneficiary: Omit<Beneficiary, 'id'>) => void;
   loading?: boolean;
   currentTotalPercentage?: number;
+  existingBeneficiaries?: Beneficiary[];
 }
 
 const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({ 
   onAddBeneficiary, 
   loading = false,
-  currentTotalPercentage = 0
+  currentTotalPercentage = 0,
+  existingBeneficiaries = []
 }) => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [percentage, setPercentage] = useState('');
   const [notes, setNotes] = useState('');
 
+  // Check if address already exists in beneficiaries
+  const isDuplicateAddress = address.trim() && existingBeneficiaries.some(
+    beneficiary => beneficiary.address.toLowerCase() === address.trim().toLowerCase()
+  );
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check for duplicate address
+    if (isDuplicateAddress) {
+      alert('This wallet address has already been added as a beneficiary. Please use a different address.');
+      return;
+    }
     
     const percentageNum = parseFloat(percentage);
     if (isNaN(percentageNum) || percentageNum <= 0 || percentageNum > 100) {
@@ -86,9 +98,21 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 font-mono text-sm"
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 font-mono text-sm ${
+              isDuplicateAddress
+                ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                : 'border-gray-300 focus:ring-black'
+            }`}
             required
           />
+          {isDuplicateAddress && (
+            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-xs text-red-700 flex items-center">
+                <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                This address is already added as a beneficiary. Please use a different address.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Percentage Input */}
@@ -188,8 +212,12 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading}
-          className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
+          disabled={loading || isDuplicateAddress}
+          className={`w-full px-6 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center space-x-2 ${
+            loading || isDuplicateAddress
+              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+              : 'bg-black text-white hover:bg-gray-800'
+          }`}
         >
           {loading ? (
             <>
