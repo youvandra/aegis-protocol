@@ -225,17 +225,6 @@ const LegacyPage: React.FC = () => {
                   <Clock className="w-5 h-5" />
                   <span>Set Moment</span>
                 </button>
-                
-                {/* Current Moment Display */}
-                {legacyMoment && (
-                  <div className="mt-4 p-4 bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Current Setting:</span>
-                      <span className="text-sm text-gray-900">{legacyMoment.label}</span>
-                    </div>
-                  </div>
-                )}
               </div>
 
             <div className="flex flex-col md:flex-row md:gap-8 gap-6">
