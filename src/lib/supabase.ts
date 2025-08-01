@@ -763,5 +763,4 @@ export const legacyService = {
       return null;
     }
   }
-  }
 };
