@@ -59,10 +59,10 @@ const RelayPage: React.FC = () => {
 
   // Filter relays by status for queue vs history
   const queueRelays = relays.filter(relay => 
-    relay.status !== 'Complete' && relay.status !== 'Rejected'
+    relay.status !== 'Complete' && relay.status !== 'Rejected' && relay.status !== 'Expired'
   );
   const historyRelays = relays.filter(relay => 
-    relay.status === 'Complete' || relay.status === 'Rejected'
+    relay.status === 'Complete' || relay.status === 'Rejected' || relay.status === 'Expired'
   );
   const handleCreateRelay = () => {
     setShowCreateRelayModal(true);
@@ -72,7 +72,7 @@ const RelayPage: React.FC = () => {
     setShowCreateRelayModal(false);
   };
 
-  const handleCreateRelaySubmit = async (receiverAddress: string, amount: string) => {
+  const handleCreateRelaySubmit = async (receiverAddress: string, amount: string, expiresAt?: string) => {
     if (!address) return;
     
     try {
@@ -85,11 +85,12 @@ const RelayPage: React.FC = () => {
         return;
       }
 
-      console.log('Creating relay:', { receiverAddress, amount });
+      console.log('Creating relay:', { receiverAddress, amount, expiresAt });
       const newRelay = await relayService.createRelay(
         address,
         receiverAddress,
-        numericAmount
+        numericAmount,
+        expiresAt
       );
       
       if (newRelay) {

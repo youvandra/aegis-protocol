@@ -28,6 +28,8 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
         return 'text-green-600 bg-green-50';
       case 'Rejected':
         return 'text-red-600 bg-red-50';
+      case 'Expired':
+        return 'text-gray-600 bg-gray-50';
       default:
         return 'text-gray-600 bg-gray-50';
     }
@@ -56,7 +58,31 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
     });
   };
 
+  const formatExpirationTime = (expiresAt?: string) => {
+    if (!expiresAt) return 'No expiration';
+    
+    const expirationDate = new Date(expiresAt);
+    const now = new Date();
+    
+    if (expirationDate <= now) {
+      return 'Expired';
+    }
+    
+    return expirationDate.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const renderActionButton = () => {
+    // No actions for expired relays
+    if (item.status === 'Expired') {
+      return null;
+    }
+    
     // Receiver gets approve/reject buttons when relay is initiated
     if (isReceiver && item.status === 'Request Initiated') {
       return (
@@ -155,6 +181,9 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
           {formatDateTime(item.created_at)}
         </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {formatExpirationTime(item.expires_at)}
+        </td>
         <td className="px-6 py-4 whitespace-nowrap">
           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
             {item.status}
@@ -166,7 +195,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
       </tr>
       {isExpanded && (
         <tr className="bg-gray-50">
-          <td colSpan={6} className="px-6 py-4">
+          <td colSpan={7} className="px-6 py-4">
             <div className="space-y-2 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -177,6 +206,12 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
                   <span className="font-medium text-gray-700">To Address:</span>
                   <p className="text-gray-600 font-mono text-xs break-all">{item.receiver_address}</p>
                 </div>
+                {item.expires_at && (
+                  <div>
+                    <span className="font-medium text-gray-700">Expires At:</span>
+                    <p className="text-gray-600">{formatExpirationTime(item.expires_at)}</p>
+                  </div>
+                )}
                 {item.transaction_hash && (
                   <div>
                     <span className="font-medium text-gray-700">Transaction Hash:</span>

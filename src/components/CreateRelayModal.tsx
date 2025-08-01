@@ -5,13 +5,15 @@ import { useAccount } from 'wagmi';
 interface CreateRelayModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (receiverAddress: string, amount: string) => void;
+  onSubmit: (receiverAddress: string, amount: string, expiresAt?: string) => void;
 }
 
 const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const { address: currentAddress } = useAccount();
   const [receiverAddress, setReceiverAddress] = useState('');
   const [amount, setAmount] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
+  const [hasExpiration, setHasExpiration] = useState(false);
 
   // Check if user is trying to send to their own address
   const isSelfSend = currentAddress && receiverAddress.toLowerCase() === currentAddress.toLowerCase();
@@ -37,15 +39,33 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
       return;
     }
 
-      onSubmit(receiverAddress.trim(), amount.trim());
+      // Validate expiration date if provided
+      if (hasExpiration && expiresAt) {
+        const expirationDate = new Date(expiresAt);
+        const now = new Date();
+        if (expirationDate <= now) {
+          alert('Expiration time must be in the future');
+          return;
+        }
+      }
+
+      onSubmit(
+        receiverAddress.trim(), 
+        amount.trim(), 
+        hasExpiration && expiresAt ? expiresAt : undefined
+      );
       setReceiverAddress('');
       setAmount('');
+      setExpiresAt('');
+      setHasExpiration(false);
     }
   };
 
   const handleClose = () => {
     setReceiverAddress('');
     setAmount('');
+    setExpiresAt('');
+    setHasExpiration(false);
     onClose();
   };
 
@@ -117,6 +137,43 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
               required
             />
           </div>
+
+          {/* Expiration Toggle */}
+          <div>
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hasExpiration}
+                onChange={(e) => setHasExpiration(e.target.checked)}
+                className="rounded border-gray-300 text-black focus:ring-black"
+              />
+              <span className="text-sm font-medium text-gray-700">Set expiration time</span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1">
+              Relay will automatically expire if not completed by this time
+            </p>
+          </div>
+
+          {/* Expiration Date Input */}
+          {hasExpiration && (
+            <div>
+              <label htmlFor="expiresAt" className="block text-sm font-medium text-gray-700 mb-2">
+                Expires At
+              </label>
+              <input
+                type="datetime-local"
+                id="expiresAt"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
+                required={hasExpiration}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Time will be set in UTC timezone
+              </p>
+            </div>
+          )}
 
           {/* Buttons */}
           <div className="flex space-x-3 pt-4">

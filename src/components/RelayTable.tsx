@@ -28,6 +28,9 @@ const RelayTable: React.FC<RelayTableProps> = ({ data, currentWallet, onRelayAct
                 Time Created
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Expires At
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -38,7 +41,7 @@ const RelayTable: React.FC<RelayTableProps> = ({ data, currentWallet, onRelayAct
           <tbody className="bg-white divide-y divide-gray-200">
             {data.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                   No relays available
                 </td>
               </tr>
