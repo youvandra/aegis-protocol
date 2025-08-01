@@ -25,14 +25,16 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, o
     }
   };
 
-  const formatReleaseDate = (releaseType: string, releaseDate: string) => {
+  const formatReleaseDate = (releaseDate: string | null) => {
     if (releaseDate) {
-      return new Date(releaseDate).toLocaleString('en-US', {
+      const date = new Date(releaseDate);
+      return date.toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        hour12: true
       });
     }
     return 'Not set';
