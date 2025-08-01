@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Users } from 'lucide-react';
+import { X, Users, Clock, AlertTriangle } from 'lucide-react';
 
 interface CreateGroupModalProps {
   isOpen: boolean;
@@ -13,25 +13,68 @@ interface CreateGroupModalProps {
 const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [groupName, setGroupName] = useState('');
   const [releaseDateTime, setReleaseDateTime] = useState('');
+  const [dateTimeError, setDateTimeError] = useState('');
+
+  // Get current time for validation
+  const getCurrentTime = () => {
+    return new Date().toISOString().slice(0, 16);
+  };
+
+  // Validate release time
+  const validateReleaseTime = (dateTimeValue: string) => {
+    if (!dateTimeValue) {
+      setDateTimeError('');
+      return true;
+    }
+
+    const inputDate = new Date(dateTimeValue);
+    const now = new Date();
+    
+    if (inputDate.getTime() <= now.getTime()) {
+      setDateTimeError('Release time must be in the future');
+      return false;
+    }
+    
+    setDateTimeError('');
+    return true;
+  };
+
+  // Handle release time change with validation
+  const handleReleaseDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setReleaseDateTime(value);
+    validateReleaseTime(value);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate release time
+    if (releaseDateTime && !validateReleaseTime(releaseDateTime)) {
+      return;
+    }
+    
     if (groupName.trim() && releaseDateTime) {
+      // Convert local time to UTC for storage
+      const localDate = new Date(releaseDateTime);
+      const utcDateTime = localDate.toISOString();
+      
       onSubmit({
         groupName: groupName.trim(),
-        releaseDateTime: releaseDateTime
+        releaseDateTime: utcDateTime
       });
       
       // Reset form
       setGroupName('');
       setReleaseDateTime('');
+      setDateTimeError('');
     }
   };
 
   const handleClose = () => {
     setGroupName('');
     setReleaseDateTime('');
+    setDateTimeError('');
     onClose();
   };
 
@@ -82,20 +125,56 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, on
           {/* Date Input */}
           <div>
             <label htmlFor="releaseDateTime" className="block text-sm font-medium text-gray-700 mb-2">
-              Release Date & Time
+              Release Date & Time (Your Local Time)
             </label>
+            
+            {/* Timezone Info Box */}
+            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">Timezone Information</span>
+              </div>
+              <div className="text-xs text-blue-800 space-y-1">
+                <p>• Current UTC time: {new Date().toISOString().slice(0, 19).replace('T', ' ')}</p>
+                <p>• Your local time: {new Date().toLocaleString()}</p>
+                <p>• Input: Your local time → Stored: UTC equivalent</p>
+                <p>• Example: Enter 19:00 (your time) → Stored: 12:00 UTC</p>
+              </div>
+            </div>
+            
             <input
               type="datetime-local"
               id="releaseDateTime"
               value={releaseDateTime}
-              onChange={(e) => setReleaseDateTime(e.target.value)}
-              min={new Date().toISOString().slice(0, 16)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
+              onChange={handleReleaseDateTimeChange}
+              min={getCurrentTime()}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                dateTimeError 
+                  ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                  : 'border-gray-300 focus:ring-black'
+              }`}
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Time will be set in UTC timezone
-            </p>
+            
+            {/* Error Message */}
+            {dateTimeError && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600" />
+                  <p className="text-xs text-red-700">{dateTimeError}</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Success Message */}
+            {!dateTimeError && releaseDateTime && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-xs text-green-700 flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  Valid release time set
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Buttons */}
@@ -109,7 +188,12 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, on
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors duration-200 font-medium"
+              disabled={!!dateTimeError}
+              className={`flex-1 px-4 py-2 rounded-md transition-colors duration-200 font-medium ${
+                dateTimeError
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
             >
               Create Group
             </button>
