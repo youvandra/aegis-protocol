@@ -27,19 +27,21 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, o
 
   const formatReleaseDate = (releaseDate: string | null) => {
     if (releaseDate) {
-      // Parse as UTC and convert to local timezone for display
-      const date = new Date(releaseDate + (releaseDate.includes('Z') ? '' : 'Z'));
-      // Check if the date is valid
+      // Parse the UTC date and convert to local timezone for display
+      const date = new Date(releaseDate);
       if (isNaN(date.getTime())) {
         return 'Invalid date';
       }
+      
+      // Format in user's local timezone
       return date.toLocaleString(undefined, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: true
+        hour12: true,
+        timeZoneName: 'short'
       });
     }
     return 'Not set';
