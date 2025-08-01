@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, Clock } from 'lucide-react';
 import { useAccount } from 'wagmi';
 
 interface CreateRelayModalProps {
@@ -14,9 +14,43 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
   const [amount, setAmount] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [hasExpiration, setHasExpiration] = useState(false);
+  const [expirationError, setExpirationError] = useState('');
 
   // Check if user is trying to send to their own address
   const isSelfSend = currentAddress && receiverAddress.toLowerCase() === currentAddress.toLowerCase();
+
+  // Get current UTC time for validation
+  const getCurrentUTC = () => {
+    return new Date().toISOString().slice(0, 16);
+  };
+
+  // Validate expiration time against UTC
+  const validateExpirationTime = (dateTimeValue: string) => {
+    if (!dateTimeValue) {
+      setExpirationError('');
+      return true;
+    }
+
+    // Convert the input datetime to UTC for comparison
+    const inputDate = new Date(dateTimeValue);
+    const nowUTC = new Date();
+    
+    if (inputDate <= nowUTC) {
+      setExpirationError('Expiration time must be in the future (UTC timezone)');
+      return false;
+    }
+    
+    setExpirationError('');
+    return true;
+  };
+
+  // Handle expiration time change with validation
+  const handleExpirationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setExpiresAt(value);
+    validateExpirationTime(value);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -39,15 +73,11 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
       return;
     }
 
-      // Validate expiration date if provided
-      if (hasExpiration && expiresAt) {
-        const expirationDate = new Date(expiresAt);
-        const now = new Date();
-        if (expirationDate <= now) {
-          alert('Expiration time must be in the future');
-          return;
-        }
-      }
+    // Validate expiration time if provided
+    if (hasExpiration && expiresAt && !validateExpirationTime(expiresAt)) {
+      return;
+    }
+
 
       // Convert expiration time to preserve user's timezone
       let expirationTimestamp = undefined;
@@ -84,6 +114,7 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
     setAmount('');
     setExpiresAt('');
     setHasExpiration(false);
+    setExpirationError('');
     onClose();
   };
 
@@ -176,20 +207,55 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
           {hasExpiration && (
             <div>
               <label htmlFor="expiresAt" className="block text-sm font-medium text-gray-700 mb-2">
-                Expires At
+                Expires At (UTC Timezone)
               </label>
+              
+              {/* UTC Time Info */}
+              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Timezone Information</span>
+                </div>
+                <div className="text-xs text-blue-800 space-y-1">
+                  <p>• Current UTC time: {new Date().toISOString().slice(0, 16).replace('T', ' ')}</p>
+                  <p>• Your local time: {new Date().toLocaleString()}</p>
+                  <p>• Input time will be treated as UTC+0</p>
+                </div>
+              </div>
+              
               <input
                 type="datetime-local"
                 id="expiresAt"
                 value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-                min={new Date().toISOString().slice(0, 16)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
+                onChange={handleExpirationChange}
+                min={getCurrentUTC()}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                  expirationError 
+                    ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                    : 'border-gray-300 focus:ring-black'
+                }`}
                 required={hasExpiration}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Time will be stored exactly as entered (your local time)
-              </p>
+              
+              {/* Error Message */}
+              {expirationError && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="w-4 h-4 text-red-600" />
+                    <p className="text-xs text-red-700">{expirationError}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Success Message */}
+              {!expirationError && expiresAt && (
+                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-xs text-green-700 flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Valid expiration time set
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -204,9 +270,9 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
             </button>
             <button
               type="submit"
-              disabled={isSelfSend}
+              disabled={isSelfSend || (hasExpiration && !!expirationError)}
               className={`flex-1 px-4 py-2 rounded-md transition-colors duration-200 font-medium ${
-                isSelfSend
+                isSelfSend || (hasExpiration && !!expirationError)
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-black text-white hover:bg-gray-800'
               }`}
