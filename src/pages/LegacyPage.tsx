@@ -7,6 +7,7 @@ import BeneficiariesDisplay from '../components/BeneficiariesDisplay';
 import EditBeneficiaryModal from '../components/EditBeneficiaryModal';
 import SetMomentModal from '../components/SetMomentModal';
 import Toast from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
 import { useWalletTracking } from '../hooks/useWalletTracking';
@@ -19,6 +20,10 @@ const LegacyPage: React.FC = () => {
   const [legacyMoment, setLegacyMoment] = useState<LegacyMoment | null>(null);
   const [showSetMomentModal, setShowSetMomentModal] = useState(false);
   const [showEditBeneficiaryModal, setShowEditBeneficiaryModal] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showMomentConfirmation, setShowMomentConfirmation] = useState(false);
+  const [pendingDeleteBeneficiaryId, setPendingDeleteBeneficiaryId] = useState<string | null>(null);
+  const [pendingMomentConfig, setPendingMomentConfig] = useState<LegacyMoment | null>(null);
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null);
   const [loading, setLoading] = useState(false);
   const [legacyPlanId, setLegacyPlanId] = useState<string | null>(null);
@@ -139,14 +144,22 @@ const LegacyPage: React.FC = () => {
   };
 
   const handleSetMomentSubmit = async (momentConfig: LegacyMoment) => {
-    if (!address) return;
+    // Store the moment config and show confirmation
+    setPendingMomentConfig(momentConfig);
+    setShowSetMomentModal(false);
+    setShowMomentConfirmation(true);
+  };
+
+  const confirmSetMoment = async () => {
+    if (!address || !pendingMomentConfig) return;
     
     try {
-      const updatedPlan = await legacyService.createOrUpdateLegacyPlan(address, momentConfig);
+      const updatedPlan = await legacyService.createOrUpdateLegacyPlan(address, pendingMomentConfig);
       if (updatedPlan) {
-        setLegacyMoment(momentConfig);
+        setLegacyMoment(pendingMomentConfig);
         setLegacyPlanId(updatedPlan.id);
-        setShowSetMomentModal(false);
+        setShowMomentConfirmation(false);
+        setPendingMomentConfig(null);
         setToastMessage('Activation moment set successfully!');
         setToastType('success');
         setShowToast(true);
@@ -161,6 +174,11 @@ const LegacyPage: React.FC = () => {
       setToastType('error');
       setShowToast(true);
     }
+  };
+
+  const cancelSetMoment = () => {
+    setShowMomentConfirmation(false);
+    setPendingMomentConfig(null);
   };
 
   const handleCloseSetMomentModal = () => {
@@ -204,16 +222,20 @@ const LegacyPage: React.FC = () => {
   };
 
   const handleDeleteBeneficiary = async (beneficiaryId: string) => {
-    if (!address) return;
-    
-    if (!confirm('Are you sure you want to delete this beneficiary?')) {
-      return;
-    }
+    // Store the beneficiary ID and show confirmation dialog
+    setPendingDeleteBeneficiaryId(beneficiaryId);
+    setShowDeleteConfirmation(true);
+  };
+
+  const confirmDeleteBeneficiary = async () => {
+    if (!address || !pendingDeleteBeneficiaryId) return;
     
     try {
-      const success = await legacyService.deleteBeneficiary(beneficiaryId);
+      const success = await legacyService.deleteBeneficiary(pendingDeleteBeneficiaryId);
       if (success) {
-        setBeneficiaries(prev => prev.filter(b => b.id !== beneficiaryId));
+        setBeneficiaries(prev => prev.filter(b => b.id !== pendingDeleteBeneficiaryId));
+        setShowDeleteConfirmation(false);
+        setPendingDeleteBeneficiaryId(null);
         setToastMessage('Beneficiary deleted successfully!');
         setToastType('success');
         setShowToast(true);
@@ -229,6 +251,14 @@ const LegacyPage: React.FC = () => {
       setShowToast(true);
     }
   };
+
+  const cancelDeleteBeneficiary = () => {
+    setShowDeleteConfirmation(false);
+    setPendingDeleteBeneficiaryId(null);
+  };
+
+  // Get the beneficiary being deleted for the confirmation dialog
+  const beneficiaryToDelete = beneficiaries.find(b => b.id === pendingDeleteBeneficiaryId);
 
   return (
     <div className="min-h-screen relative flex flex-col bg-[#F8F8F8]">
@@ -314,6 +344,30 @@ const LegacyPage: React.FC = () => {
         onSubmit={handleUpdateBeneficiary}
         beneficiary={editingBeneficiary}
         currentTotalPercentage={currentTotalPercentage}
+      />
+      
+      {/* Delete Beneficiary Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteConfirmation}
+        title="Delete Beneficiary"
+        message={`Are you sure you want to delete "${beneficiaryToDelete?.name}"? This action cannot be undone and will remove them from your legacy plan.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        onConfirm={confirmDeleteBeneficiary}
+        onCancel={cancelDeleteBeneficiary}
+      />
+
+      {/* Set Moment Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showMomentConfirmation}
+        title="Set Activation Moment"
+        message={`Are you sure you want to set the activation moment to "${pendingMomentConfig?.label}"? This will determine when your legacy plan becomes active.`}
+        confirmText="Set Moment"
+        cancelText="Cancel"
+        type="warning"
+        onConfirm={confirmSetMoment}
+        onCancel={cancelSetMoment}
       />
       
       {/* Toast Notification */}
