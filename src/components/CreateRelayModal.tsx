@@ -85,9 +85,9 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
       // Convert expiration time to preserve user's timezone
       let expirationTimestamp = undefined;
       if (hasExpiration && expiresAt) {
-        // Store the datetime exactly as entered by user (their local time)
-        // Add seconds to make it a complete timestamp
-        expirationTimestamp = `${expiresAt}:00`;
+        // Convert user's local time to UTC for storage
+        const localDate = new Date(expiresAt);
+        expirationTimestamp = localDate.toISOString();
       }
 
       onSubmit(
@@ -207,13 +207,13 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
               <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
                   <Clock className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Timezone Information</span>
+                  <span className="text-sm font-medium text-blue-900">Storage Information</span>
                 </div>
                 <div className="text-xs text-blue-800 space-y-1">
                   <p>• Current UTC time: {new Date().toISOString().slice(0, 19).replace('T', ' ')}</p>
                   <p>• Your local time: {new Date().toLocaleString()}</p>
-                  <p>• Input time will be treated as your local time</p>
-                  <p>• Example: Enter 12:00 = 12:00 in your timezone</p>
+                  <p>• Input: Your local time → Stored: UTC equivalent</p>
+                  <p>• Example: Enter 19:00 (your time) → Stored: 12:00 UTC</p>
                 </div>
               </div>
               
