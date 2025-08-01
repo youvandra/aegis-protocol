@@ -136,6 +136,33 @@ const StreamPage: React.FC = () => {
     }
   };
 
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!address) return;
+    
+    try {
+      console.log('Deleting group:', groupId);
+      const success = await streamService.deleteGroup(groupId, address);
+      
+      if (success) {
+        console.log('Group deleted successfully');
+        await loadGroups();
+        setToastMessage('Group deleted successfully!');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        console.error('Failed to delete group');
+        setToastMessage('Failed to delete group. Please try again.');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      setToastMessage('Failed to delete group. Please try again.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
   return (
     <div className="min-h-screen relative flex flex-col bg-[#F8F8F8]">
       <AestheticNavbar 
@@ -223,6 +250,7 @@ const StreamPage: React.FC = () => {
                 ) : (
                   <StreamTable 
                     data={activeTab === 'upcoming' ? upcomingGroups : releasedGroups} 
+                    onDeleteGroup={handleDeleteGroup}
                   />
                 )}
               </div>

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Calendar, Repeat } from 'lucide-react';
+import { ChevronDown, ChevronUp, Calendar, Repeat, Trash2 } from 'lucide-react';
 import { Group } from '../types/stream';
 
 interface StreamTableRowProps {
   group: Group;
+  onDeleteGroup?: (groupId: string) => void;
 }
 
-const StreamTableRow: React.FC<StreamTableRowProps> = ({ group }) => {
+const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getStatusColor = (status: string) => {
@@ -32,6 +33,14 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group }) => {
       });
     }
     return 'Not set';
+  };
+
+  const handleDeleteGroup = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row expansion when clicking delete
+    
+    if (window.confirm(`Are you sure you want to delete the group "${group.group_name}"? This action cannot be undone and will remove all members from this group.`)) {
+      onDeleteGroup?.(group.id);
+    }
   };
 
   return (
@@ -69,10 +78,21 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group }) => {
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
           {group.total_amount || 0} HBAR
         </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          {group.status === 'upcoming' && onDeleteGroup && (
+            <button
+              onClick={handleDeleteGroup}
+              className="text-gray-400 hover:text-red-600 transition-colors duration-200 p-1"
+              title="Delete group"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </td>
       </tr>
       {isExpanded && (
         <tr className="bg-gray-50">
-          <td colSpan={5} className="px-6 py-4">
+          <td colSpan={6} className="px-6 py-4">
             <div className="space-y-3">
               <h4 className="font-medium text-gray-900 mb-3">Members ({group.members.length})</h4>
               {group.members.length === 0 ? (

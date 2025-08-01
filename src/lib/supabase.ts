@@ -331,6 +331,29 @@ export const streamService = {
       console.error('Error in addMemberToGroup:', error);
       return null;
     }
+  },
+
+  async deleteGroup(groupId: string, walletAddress: string): Promise<boolean> {
+    try {
+      setWalletContext(walletAddress);
+      console.log('Deleting group:', { groupId, walletAddress });
+      
+      const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', groupId);
+
+      if (error) {
+        console.error('Error deleting group:', error);
+        return false;
+      }
+
+      console.log('Group deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('Error in deleteGroup:', error);
+      return false;
+    }
   }
 };
 
