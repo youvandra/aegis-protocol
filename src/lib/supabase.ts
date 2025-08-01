@@ -180,9 +180,8 @@ export const walletAccountService = {
 export const streamService = {
   async createGroup(
     groupName: string,
-    releaseType: 'monthly' | 'one-time',
     walletAddress: string,
-    releaseDate?: string
+    releaseDate: string
   ): Promise<Group | null> {
     try {
       // Set wallet context for RLS
@@ -192,8 +191,7 @@ export const streamService = {
         .from('groups')
         .insert({
           group_name: groupName,
-          release_type: releaseType,
-          release_date: releaseDate || null,
+          release_date: releaseDate,
           wallet_address: walletAddress.toLowerCase(),
           total_members: 0,
           total_amount: 0,
@@ -210,11 +208,6 @@ export const streamService = {
       return {
         ...data,
         number: data.group_number,
-        groupName: data.group_name,
-        releaseDate: data.release_date,
-        releaseType: data.release_type,
-        totalMembers: data.total_members,
-        totalAmount: data.total_amount,
         members: []
       };
     } catch (error) {
@@ -254,19 +247,12 @@ export const streamService = {
         group_number: group.group_number,
         group_name: group.group_name,
         release_date: group.release_date,
-        release_type: group.release_type,
         total_members: group.total_members,
         total_amount: group.total_amount,
         wallet_address: group.wallet_address,
         status: group.status,
         created_at: group.created_at,
         updated_at: group.updated_at,
-        // Legacy interface compatibility
-        groupName: group.group_name,
-        releaseDate: group.release_date,
-        releaseType: group.release_type,
-        totalMembers: group.total_members,
-        totalAmount: group.total_amount,
         members: Array.isArray(group.members) ? group.members : []
       }));
 
@@ -387,19 +373,12 @@ export const streamService = {
         group_number: data.group_number,
         group_name: data.group_name,
         release_date: data.release_date,
-        release_type: data.release_type,
         total_members: data.total_members,
         total_amount: data.total_amount,
         wallet_address: data.wallet_address,
         status: data.status,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        // Legacy interface compatibility
-        groupName: data.group_name,
-        releaseDate: data.release_date,
-        releaseType: data.release_type,
-        totalMembers: data.total_members,
-        totalAmount: data.total_amount,
         members: Array.isArray(data.members) ? data.members : []
       };
 

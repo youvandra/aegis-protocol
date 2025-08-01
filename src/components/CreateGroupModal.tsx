@@ -6,38 +6,31 @@ interface CreateGroupModalProps {
   onClose: () => void;
   onSubmit: (groupData: {
     groupName: string;
-    releaseType: 'monthly' | 'one-time';
     releaseDate?: string;
   }) => void;
 }
 
 const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [groupName, setGroupName] = useState('');
-  const [releaseType, setReleaseType] = useState<'monthly' | 'one-time'>('one-time');
   const [releaseDate, setReleaseDate] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (groupName.trim()) {
-      const submitData = {
+    if (groupName.trim() && releaseDate) {
+      onSubmit({
         groupName: groupName.trim(),
-        releaseType,
-        ...(releaseType === 'one-time' && releaseDate ? { releaseDate } : {})
-      };
-      
-      onSubmit(submitData);
+        releaseDate: releaseDate
+      });
       
       // Reset form
       setGroupName('');
-      setReleaseType('one-time');
       setReleaseDate('');
     }
   };
 
   const handleClose = () => {
     setGroupName('');
-    setReleaseType('one-time');
     setReleaseDate('');
     onClose();
   };
@@ -84,26 +77,6 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, on
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
               required
             />
-          </div>
-
-          {/* Release Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Release Type
-            </label>
-            <div className="space-y-3">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="releaseType"
-                  value="one-time"
-                  checked={releaseType === 'one-time'}
-                  onChange={(e) => setReleaseType(e.target.value as 'one-time')}
-                  className="w-4 h-4 text-black border-gray-300 focus:ring-black focus:ring-2"
-                />
-                <span className="text-sm text-gray-900">Specific Date Release</span>
-              </label>
-            </div>
           </div>
 
           {/* Date Input */}

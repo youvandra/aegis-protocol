@@ -14,7 +14,6 @@ export interface Group {
   group_number: string;
   group_name: string;
   release_date: string | null;
-  release_type: 'monthly' | 'one-time';
   total_members: number;
   total_amount: number;
   wallet_address: string;

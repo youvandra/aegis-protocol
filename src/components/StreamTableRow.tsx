@@ -26,9 +26,6 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, o
   };
 
   const formatReleaseDate = (releaseType: string, releaseDate: string) => {
-    if (releaseType === 'monthly') {
-      return 'Monthly';
-    }
     if (releaseDate) {
       return new Date(releaseDate).toLocaleString('en-US', {
         year: 'numeric',
@@ -82,12 +79,8 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, o
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
           <div className="flex items-center">
-            {group.release_type === 'monthly' ? (
-              <Repeat className="w-4 h-4 mr-2 text-blue-600" />
-            ) : (
-              <Calendar className="w-4 h-4 mr-2 text-gray-600" />
-            )}
-            {formatReleaseDate(group.release_type, group.release_date)}
+            <Calendar className="w-4 h-4 mr-2 text-gray-600" />
+            {formatReleaseDate(group.release_date)}
           </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
