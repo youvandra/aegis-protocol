@@ -5,6 +5,7 @@ import AestheticNavbar from '../components/AestheticNavbar';
 import StreamTable from '../components/StreamTable';
 import CreateGroupModal from '../components/CreateGroupModal';
 import AddMemberModal from '../components/AddMemberModal';
+import Toast from '../components/Toast';
 import { Group, Member } from '../types/stream';
 import { useWalletTracking } from '../hooks/useWalletTracking';
 import { streamService } from '../lib/supabase';
@@ -17,6 +18,19 @@ const StreamPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
 
   const loadGroups = async () => {
     setLoading(true);
@@ -60,13 +74,20 @@ const StreamPage: React.FC = () => {
         console.log('Group created successfully:', newGroup);
         await loadGroups();
         setShowCreateGroupModal(false);
+        setToastMessage('Group created successfully!');
+        setToastType('success');
+        setShowToast(true);
       } else {
         console.error('Failed to create group - no data returned');
-        alert('Failed to create group. Please try again.');
+        setToastMessage('Failed to create group. Please try again.');
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (error) {
       console.error('Error creating group:', error);
-      alert('Failed to create group. Please try again.');
+      setToastMessage('Failed to create group. Please try again.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -79,7 +100,9 @@ const StreamPage: React.FC = () => {
     // Validate member data before processing
     if (!memberData.groupId || !memberData.name || !memberData.memberAddress || !memberData.amount) {
       console.error('Invalid member data:', memberData);
-      alert('Please fill in all required fields.');
+      setToastMessage('Please fill in all required fields.');
+      setToastType('error');
+      setShowToast(true);
       return;
     }
 
@@ -96,13 +119,20 @@ const StreamPage: React.FC = () => {
         console.log('Member added successfully:', newMember);
         await loadGroups();
         setShowAddMemberModal(false);
+        setToastMessage('Member added successfully!');
+        setToastType('success');
+        setShowToast(true);
       } else {
         console.error('Failed to add member - no data returned');
-        alert('Failed to add member. Please try again.');
+        setToastMessage('Failed to add member. Please try again.');
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (error) {
       console.error('Error adding member:', error);
-      alert('Failed to add member. Please try again.');
+      setToastMessage('Failed to add member. Please try again.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -219,6 +249,15 @@ const StreamPage: React.FC = () => {
         }}
         groups={groups}
       />
+      
+      {/* Toast Notification */}
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 };
