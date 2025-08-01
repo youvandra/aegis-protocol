@@ -76,11 +76,20 @@ const RelayPage: React.FC = () => {
     if (!address) return;
     
     try {
+      // Additional validation
+      const numericAmount = parseFloat(amount);
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        setToastMessage('Please enter a valid amount greater than 0.');
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
+
       console.log('Creating relay:', { receiverAddress, amount });
       const newRelay = await relayService.createRelay(
         address,
         receiverAddress,
-        parseFloat(amount)
+        numericAmount
       );
       
       if (newRelay) {
@@ -92,13 +101,13 @@ const RelayPage: React.FC = () => {
         setShowToast(true);
       } else {
         console.error('Failed to create relay - no data returned');
-        setToastMessage('Failed to create relay. Please try again.');
+        setToastMessage('Failed to create relay. Please check your inputs and try again.');
         setToastType('error');
         setShowToast(true);
       }
     } catch (error) {
       console.error('Error creating relay:', error);
-      setToastMessage('Failed to create relay. Please try again.');
+      setToastMessage('Failed to create relay. Please check your connection and try again.');
       setToastType('error');
       setShowToast(true);
     }

@@ -14,6 +14,18 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (receiverAddress.trim() && amount.trim()) {
+    // Validate inputs
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      alert('Please enter a valid amount greater than 0');
+      return;
+    }
+
+    if (!receiverAddress.trim()) {
+      alert('Please enter a valid receiver address');
+      return;
+    }
+
       onSubmit(receiverAddress.trim(), amount.trim());
       setReceiverAddress('');
       setAmount('');
