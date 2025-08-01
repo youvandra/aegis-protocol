@@ -133,9 +133,9 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({
                     : 'border-gray-300 focus:ring-black'
                 }`}
                 max={Math.max(0, 100 - currentTotalPercentage)}
-              max="100"
               step="0.01"
-              className="w-full px-4 py-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
+              required
+            />
             
             {/* Dynamic Warning Messages */}
             {currentTotalPercentage >= 100 ? (
