@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
+import { useAccount } from 'wagmi';
 
 interface CreateRelayModalProps {
   isOpen: boolean;
@@ -8,11 +9,21 @@ interface CreateRelayModalProps {
 }
 
 const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, onSubmit }) => {
+  const { address: currentAddress } = useAccount();
   const [receiverAddress, setReceiverAddress] = useState('');
   const [amount, setAmount] = useState('');
 
+  // Check if user is trying to send to their own address
+  const isSelfSend = currentAddress && receiverAddress.toLowerCase() === currentAddress.toLowerCase();
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent self-send
+    if (isSelfSend) {
+      alert('You cannot create a relay to your own address. Please enter a different receiver address.');
+      return;
+    }
+    
     if (receiverAddress.trim() && amount.trim()) {
     // Validate inputs
     const amountNum = parseFloat(amount);
@@ -74,9 +85,19 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
               value={receiverAddress}
               onChange={(e) => setReceiverAddress(e.target.value)}
               placeholder="0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                isSelfSend 
+                  ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                  : 'border-gray-300 focus:ring-black'
+              }`}
               required
             />
+            {isSelfSend && (
+              <div className="mt-2 flex items-center space-x-2 text-red-600">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm">You cannot send a relay to your own address</span>
+              </div>
+            )}
           </div>
 
           {/* Amount Input */}
@@ -108,7 +129,12 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors duration-200 font-medium"
+              disabled={isSelfSend}
+              className={`flex-1 px-4 py-2 rounded-md transition-colors duration-200 font-medium ${
+                isSelfSend
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
             >
               Create
             </button>
