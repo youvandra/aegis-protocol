@@ -93,6 +93,9 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, on
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
               required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Time will be set in UTC timezone
+            </p>
           </div>
 
           {/* Buttons */}
