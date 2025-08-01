@@ -222,6 +222,8 @@ const LegacyPage: React.FC = () => {
   };
 
   const handleDeleteBeneficiary = async (beneficiaryId: string) => {
+    if (!address) return;
+    
     // Store the beneficiary ID and show confirmation dialog
     setPendingDeleteBeneficiaryId(beneficiaryId);
     setShowDeleteConfirmation(true);
@@ -350,7 +352,7 @@ const LegacyPage: React.FC = () => {
       <ConfirmationDialog
         isOpen={showDeleteConfirmation}
         title="Delete Beneficiary"
-        message={`Are you sure you want to delete "${beneficiaryToDelete?.name}"? This action cannot be undone and will remove them from your legacy plan.`}
+        message={beneficiaryToDelete ? `Are you sure you want to delete "${beneficiaryToDelete.name}"? This action cannot be undone and will remove them from your legacy plan.` : 'Are you sure you want to delete this beneficiary?'}
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"

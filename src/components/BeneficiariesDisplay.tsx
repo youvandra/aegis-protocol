@@ -143,6 +143,11 @@ const BeneficiariesDisplay: React.FC<BeneficiariesDisplayProps> = ({
                     {onDeleteBeneficiary && (
                       <button
                         onClick={() => onDeleteBeneficiary(beneficiary.id)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onDeleteBeneficiary(beneficiary.id);
+                        }}
                         className="p-1 text-gray-400 hover:text-red-600 transition-colors duration-200"
                         title="Delete beneficiary"
                       >
