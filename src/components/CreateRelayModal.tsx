@@ -170,7 +170,7 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
                 required={hasExpiration}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Time will be set in UTC timezone
+                Time will be set in your local timezone
               </p>
             </div>
           )}

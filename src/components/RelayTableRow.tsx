@@ -50,11 +50,10 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
+      month: 'short',
+      day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+      minute: '2-digit'
     });
   };
 
@@ -68,10 +67,22 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
       return 'Expired';
     }
     
-    return expirationDate.toLocaleString('en-US', {
+    const timeUntilExpiration = expirationDate.getTime() - now.getTime();
+    const hoursUntilExpiration = Math.floor(timeUntilExpiration / (1000 * 60 * 60));
+    
+    // Show relative time if expiring soon
+    if (hoursUntilExpiration < 24 && hoursUntilExpiration > 0) {
+      if (hoursUntilExpiration < 1) {
+        const minutesUntilExpiration = Math.floor(timeUntilExpiration / (1000 * 60));
+        return `Expires in ${minutesUntilExpiration}m`;
+      }
+      return `Expires in ${hoursUntilExpiration}h`;
+    }
+    
+    return expirationDate.toLocaleString(undefined, {
       year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
+      month: 'short',
+      day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -209,7 +220,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
                 {item.expires_at && (
                   <div>
                     <span className="font-medium text-gray-700">Expires At:</span>
-                    <p className="text-gray-600">{formatExpirationTime(item.expires_at)}</p>
+                    <p className="text-gray-600">{new Date(item.expires_at).toLocaleString()}</p>
                   </div>
                 )}
                 {item.transaction_hash && (
