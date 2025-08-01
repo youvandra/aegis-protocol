@@ -443,7 +443,7 @@ export const relayService = {
   },
 
   async approveRelay(relayId: string, receiverAddress: string): Promise<Relay | null> {
-    return this.updateRelayStatus(relayId, 'Waiting for Sender to Execute', receiverAddress);
+    return this.updateRelayStatus(relayId, 'Waiting for Receiver\'s Approval', receiverAddress);
   },
 
   async rejectRelay(relayId: string, receiverAddress: string): Promise<Relay | null> {

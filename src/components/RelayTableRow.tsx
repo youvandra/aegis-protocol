@@ -57,8 +57,8 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
   };
 
   const renderActionButton = () => {
-    // Receivers can approve/reject when waiting for approval
-    if (isReceiver && item.status === 'Waiting for Receiver\'s Approval') {
+    // When relay is initiated, receiver gets approve/reject buttons
+    if (isReceiver && item.status === 'Request Initiated') {
       return (
         <div className="flex space-x-2">
           <button
@@ -83,22 +83,33 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
       );
     }
     
-    // Senders can execute when waiting for execution
-    if (isSender && item.status === 'Waiting for Sender to Execute') {
+    // After receiver approves, sender gets execute/cancel buttons
+    if (isSender && item.status === 'Waiting for Receiver\'s Approval') {
       return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleAction('execute');
-          }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-        >
-          Execute
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAction('execute');
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+          >
+            Execute
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAction('cancel');
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+          >
+            Cancel
+          </button>
+        </div>
       );
     }
     
-    // Senders can cancel if still in initial state
+    // Senders can only cancel if still in initial state and no receiver action yet
     if (isSender && item.status === 'Request Initiated') {
       return (
         <button
