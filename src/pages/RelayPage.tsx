@@ -5,6 +5,7 @@ import { useWeb3Modal } from '@web3modal/wagmi/react';
 import AestheticNavbar from '../components/AestheticNavbar';
 import RelayTable from '../components/RelayTable';
 import CreateRelayModal from '../components/CreateRelayModal';
+import Toast from '../components/Toast';
 import { RelayItem } from '../types/relay';
 import { useWalletTracking } from '../hooks/useWalletTracking';
 import { relayService } from '../lib/supabase';
@@ -16,6 +17,19 @@ const RelayPage: React.FC = () => {
   const [showCreateRelayModal, setShowCreateRelayModal] = useState(false);
   const [relays, setRelays] = useState<RelayItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
 
   // Load relays when wallet connects
   useEffect(() => {
@@ -73,13 +87,20 @@ const RelayPage: React.FC = () => {
         console.log('Relay created successfully:', newRelay);
         await loadRelays();
         setShowCreateRelayModal(false);
+        setToastMessage('Relay created successfully!');
+        setToastType('success');
+        setShowToast(true);
       } else {
         console.error('Failed to create relay - no data returned');
-        alert('Failed to create relay. Please try again.');
+        setToastMessage('Failed to create relay. Please try again.');
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (error) {
       console.error('Error creating relay:', error);
-      alert('Failed to create relay. Please try again.');
+      setToastMessage('Failed to create relay. Please try again.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -109,12 +130,19 @@ const RelayPage: React.FC = () => {
       if (result) {
         console.log(`Relay ${action} successful:`, result);
         await loadRelays();
+        setToastMessage(`Relay ${action}d successfully!`);
+        setToastType('success');
+        setShowToast(true);
       } else {
-        alert(`Failed to ${action} relay. Please try again.`);
+        setToastMessage(`Failed to ${action} relay. Please try again.`);
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (error) {
       console.error(`Error ${action}ing relay:`, error);
-      alert(`Failed to ${action} relay. Please try again.`);
+      setToastMessage(`Failed to ${action} relay. Please try again.`);
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -211,6 +239,15 @@ const RelayPage: React.FC = () => {
         onClose={handleCloseCreateRelayModal}
         onSubmit={handleCreateRelaySubmit}
       />
+      
+      {/* Toast Notification */}
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 };
