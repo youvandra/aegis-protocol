@@ -277,6 +277,7 @@ const StreamPage: React.FC = () => {
                     data={activeTab === 'upcoming' ? upcomingGroups : releasedGroups} 
                     onDeleteGroup={handleDeleteGroup}
                     onReleaseGroup={handleReleaseGroup}
+                    itemsPerPage={10}
                   />
                 )}
               </div>
