@@ -6,6 +6,7 @@ import SetBeneficiariesForm from '../components/SetBeneficiariesForm';
 import BeneficiariesDisplay from '../components/BeneficiariesDisplay';
 import EditBeneficiaryModal from '../components/EditBeneficiaryModal';
 import SetMomentModal from '../components/SetMomentModal';
+import Toast from '../components/Toast';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
 import { useWalletTracking } from '../hooks/useWalletTracking';
@@ -21,6 +22,9 @@ const LegacyPage: React.FC = () => {
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null);
   const [loading, setLoading] = useState(false);
   const [legacyPlanId, setLegacyPlanId] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
 
   // Calculate current total percentage
   const currentTotalPercentage = beneficiaries.reduce((sum, beneficiary) => sum + beneficiary.percentage, 0);
@@ -36,6 +40,16 @@ const LegacyPage: React.FC = () => {
       setLegacyPlanId(null);
     }
   }, [isConnected, address]);
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
 
   const loadLegacyData = async () => {
     if (!address) return;
@@ -74,7 +88,9 @@ const LegacyPage: React.FC = () => {
     
     if (newTotal > 100) {
       const remainingPercentage = 100 - currentTotal;
-      alert(`Total percentage cannot exceed 100%. You can allocate up to ${remainingPercentage.toFixed(1)}% more.`);
+      setToastMessage(`Total percentage cannot exceed 100%. You can allocate up to ${remainingPercentage.toFixed(1)}% more.`);
+      setToastType('error');
+      setShowToast(true);
       return;
     }
     
@@ -91,7 +107,9 @@ const LegacyPage: React.FC = () => {
         
         const newPlan = await legacyService.createOrUpdateLegacyPlan(address, defaultMoment);
         if (!newPlan) {
-          alert('Failed to create legacy plan. Please try again.');
+          setToastMessage('Failed to create legacy plan. Please try again.');
+          setToastType('error');
+          setShowToast(true);
           return;
         }
         
@@ -104,12 +122,19 @@ const LegacyPage: React.FC = () => {
       const newBeneficiary = await legacyService.addBeneficiary(currentLegacyPlanId, beneficiaryData);
       if (newBeneficiary) {
         setBeneficiaries(prev => [...prev, newBeneficiary]);
+        setToastMessage('Beneficiary added successfully!');
+        setToastType('success');
+        setShowToast(true);
       } else {
-        alert('Failed to add beneficiary. Please try again.');
+        setToastMessage('Failed to add beneficiary. Please try again.');
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (error) {
       console.error('Error adding beneficiary:', error);
-      alert('Failed to add beneficiary. Please try again.');
+      setToastMessage('Failed to add beneficiary. Please try again.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -122,12 +147,19 @@ const LegacyPage: React.FC = () => {
         setLegacyMoment(momentConfig);
         setLegacyPlanId(updatedPlan.id);
         setShowSetMomentModal(false);
+        setToastMessage('Activation moment set successfully!');
+        setToastType('success');
+        setShowToast(true);
       } else {
-        alert('Failed to set moment. Please try again.');
+        setToastMessage('Failed to set moment. Please try again.');
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (error) {
       console.error('Error setting moment:', error);
-      alert('Failed to set moment. Please try again.');
+      setToastMessage('Failed to set moment. Please try again.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -155,12 +187,19 @@ const LegacyPage: React.FC = () => {
           prev.map(b => b.id === beneficiaryId ? updatedBeneficiary : b)
         );
         handleCloseEditBeneficiaryModal();
+        setToastMessage('Beneficiary updated successfully!');
+        setToastType('success');
+        setShowToast(true);
       } else {
-        alert('Failed to update beneficiary. Please try again.');
+        setToastMessage('Failed to update beneficiary. Please try again.');
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (error) {
       console.error('Error updating beneficiary:', error);
-      alert('Failed to update beneficiary. Please try again.');
+      setToastMessage('Failed to update beneficiary. Please try again.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -175,12 +214,19 @@ const LegacyPage: React.FC = () => {
       const success = await legacyService.deleteBeneficiary(beneficiaryId);
       if (success) {
         setBeneficiaries(prev => prev.filter(b => b.id !== beneficiaryId));
+        setToastMessage('Beneficiary deleted successfully!');
+        setToastType('success');
+        setShowToast(true);
       } else {
-        alert('Failed to delete beneficiary. Please try again.');
+        setToastMessage('Failed to delete beneficiary. Please try again.');
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (error) {
       console.error('Error deleting beneficiary:', error);
-      alert('Failed to delete beneficiary. Please try again.');
+      setToastMessage('Failed to delete beneficiary. Please try again.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -269,6 +315,15 @@ const LegacyPage: React.FC = () => {
         beneficiary={editingBeneficiary}
         currentTotalPercentage={currentTotalPercentage}
       />
+      
+      {/* Toast Notification */}
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 };
