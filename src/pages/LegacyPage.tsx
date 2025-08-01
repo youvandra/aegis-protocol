@@ -152,7 +152,7 @@ const LegacyPage: React.FC = () => {
           ) : (
             <>
               {/* Set Moment Button */}
-              <div className="mb-8 flex flex-col items-start">
+              <div className="mb-8 flex flex-col items-end">
                 <button
                   onClick={() => setShowSetMomentModal(true)}
                   className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium flex items-center space-x-2"
