@@ -108,15 +108,15 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, on
 
           {/* Date Input */}
           <div>
-            <label htmlFor="releaseDate" className="block text-sm font-medium text-gray-700 mb-2">
-              Release Date
+            <label htmlFor="releaseDateTime" className="block text-sm font-medium text-gray-700 mb-2">
+              Release Date & Time
             </label>
             <input
-              type="date"
-              id="releaseDate"
+              type="datetime-local"
+              id="releaseDateTime"
               value={releaseDate}
               onChange={(e) => setReleaseDate(e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
+              min={new Date().toISOString().slice(0, 16)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
               required
             />

@@ -30,10 +30,12 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, o
       return 'Monthly';
     }
     if (releaseDate) {
-      return new Date(releaseDate).toLocaleDateString('en-US', {
+      return new Date(releaseDate).toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     }
     return 'Not set';
