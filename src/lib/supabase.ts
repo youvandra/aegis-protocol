@@ -703,7 +703,60 @@ export const legacyService = {
       return true;
     } catch (error) {
       console.error('Error in deleteBeneficiary:', error);
+  async updateBeneficiary(
+    beneficiaryId: string,
+    beneficiaryData: Omit<Beneficiary, 'id'>
+  ): Promise<Beneficiary | null> {
+    try {
+      // Get the beneficiary to find the legacy plan and owner's wallet
+      const { data: beneficiary, error: beneficiaryError } = await supabase
+        .from('beneficiaries')
+        .select(`
+          legacy_plan_id,
+          legacy_plans!inner(wallet_address)
+        `)
+        .eq('id', beneficiaryId)
+        .single();
+      
+      if (beneficiaryError || !beneficiary) {
+        console.error('Error fetching beneficiary for update:', beneficiaryError);
+        return null;
+      }
+      
+      setWalletContext(beneficiary.legacy_plans.wallet_address);
+      console.log('Updating beneficiary:', { beneficiaryId, beneficiaryData });
+      
+      const { data, error } = await supabase
+        .from('beneficiaries')
+        .update({
+          name: beneficiaryData.name,
+          wallet_address: beneficiaryData.address.toLowerCase(),
+          percentage: beneficiaryData.percentage,
+          notes: beneficiaryData.notes || '',
+        })
+        .eq('id', beneficiaryId)
+        .select()
+        .single();
       return false;
+      if (error) {
+        console.error('Error updating beneficiary:', error);
+        return null;
+      }
+    }
+      // Transform database format to component format
+      const transformedBeneficiary: Beneficiary = {
+        id: data.id,
+        name: data.name,
+        address: data.wallet_address,
+        percentage: Number(data.percentage),
+        notes: data.notes || '',
+      };
+  },
+      console.log('Updated beneficiary:', transformedBeneficiary);
+      return transformedBeneficiary;
+    } catch (error) {
+      console.error('Error in updateBeneficiary:', error);
+      return null;
     }
   }
 };

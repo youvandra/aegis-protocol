@@ -4,6 +4,7 @@ import { Shield, Clock } from 'lucide-react';
 import AestheticNavbar from '../components/AestheticNavbar';
 import SetBeneficiariesForm from '../components/SetBeneficiariesForm';
 import BeneficiariesDisplay from '../components/BeneficiariesDisplay';
+import EditBeneficiaryModal from '../components/EditBeneficiaryModal';
 import SetMomentModal from '../components/SetMomentModal';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
@@ -16,6 +17,8 @@ const LegacyPage: React.FC = () => {
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [legacyMoment, setLegacyMoment] = useState<LegacyMoment | null>(null);
   const [showSetMomentModal, setShowSetMomentModal] = useState(false);
+  const [showEditBeneficiaryModal, setShowEditBeneficiaryModal] = useState(false);
+  const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null);
   const [loading, setLoading] = useState(false);
   const [legacyPlanId, setLegacyPlanId] = useState<string | null>(null);
 
@@ -61,6 +64,16 @@ const LegacyPage: React.FC = () => {
 
   const handleAddBeneficiary = async (beneficiaryData: Omit<Beneficiary, 'id'>) => {
     if (!address) return;
+    
+    // Check if adding this beneficiary would exceed 100%
+    const currentTotal = beneficiaries.reduce((sum, b) => sum + b.percentage, 0);
+    const newTotal = currentTotal + beneficiaryData.percentage;
+    
+    if (newTotal > 100) {
+      const remainingPercentage = 100 - currentTotal;
+      alert(`Total percentage cannot exceed 100%. You can allocate up to ${remainingPercentage.toFixed(1)}% more.`);
+      return;
+    }
     
     try {
       let currentLegacyPlanId = legacyPlanId;

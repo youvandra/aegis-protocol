@@ -5,11 +5,13 @@ import { Beneficiary } from '../types/beneficiary';
 interface SetBeneficiariesFormProps {
   onAddBeneficiary: (beneficiary: Omit<Beneficiary, 'id'>) => void;
   loading?: boolean;
+  currentTotalPercentage?: number;
 }
 
 const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({ 
   onAddBeneficiary, 
-  loading = false 
+  loading = false,
+  currentTotalPercentage = 0
 }) => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -22,6 +24,14 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({
     const percentageNum = parseFloat(percentage);
     if (isNaN(percentageNum) || percentageNum <= 0 || percentageNum > 100) {
       alert('Please enter a valid percentage between 0.01 and 100');
+      return;
+    }
+
+    // Check if adding this percentage would exceed 100%
+    const newTotal = currentTotalPercentage + percentageNum;
+    if (newTotal > 100) {
+      const remainingPercentage = 100 - currentTotalPercentage;
+      alert(`Total percentage cannot exceed 100%. You can allocate up to ${remainingPercentage.toFixed(1)}% more.`);
       return;
     }
 
@@ -85,6 +95,11 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({
         <div>
           <label htmlFor="percentage" className="block text-sm font-medium text-gray-700 mb-2">
             Inheritance Percentage
+            {currentTotalPercentage > 0 && (
+              <p className="text-xs text-gray-500 mb-2">
+                Remaining: {(100 - currentTotalPercentage).toFixed(1)}%
+              </p>
+            )}
           </label>
           <div className="relative">
             <input
@@ -93,7 +108,7 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({
               value={percentage}
               onChange={(e) => setPercentage(e.target.value)}
               placeholder="25"
-              min="0.01"
+                max={100 - currentTotalPercentage}
               max="100"
               step="0.01"
               className="w-full px-4 py-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"

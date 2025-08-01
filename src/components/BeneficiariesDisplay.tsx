@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Users, AlertTriangle, CheckCircle, Clock, Edit2, Trash2 } from 'lucide-react';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
 
@@ -7,12 +7,16 @@ interface BeneficiariesDisplayProps {
   beneficiaries: Beneficiary[];
   legacyMoment?: LegacyMoment | null;
   loading?: boolean;
+  onEditBeneficiary?: (beneficiary: Beneficiary) => void;
+  onDeleteBeneficiary?: (beneficiaryId: string) => void;
 }
 
 const BeneficiariesDisplay: React.FC<BeneficiariesDisplayProps> = ({ 
   beneficiaries, 
   legacyMoment,
-  loading = false
+  loading = false,
+  onEditBeneficiary,
+  onDeleteBeneficiary
 }) => {
   const totalPercentage = beneficiaries.reduce((sum, beneficiary) => sum + beneficiary.percentage, 0);
   const isComplete = totalPercentage === 100;
@@ -124,8 +128,28 @@ const BeneficiariesDisplay: React.FC<BeneficiariesDisplayProps> = ({
                   <h3 className="font-semibold text-gray-900">{beneficiary.name}</h3>
                   <p className="text-sm text-gray-600 font-mono break-all">{beneficiary.address}</p>
                 </div>
-                <div className="ml-4 text-right">
+                <div className="ml-4 flex items-center space-x-3">
                   <span className="text-lg font-bold text-gray-900">{beneficiary.percentage}%</span>
+                  <div className="flex space-x-1">
+                    {onEditBeneficiary && (
+                      <button
+                        onClick={() => onEditBeneficiary(beneficiary)}
+                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors duration-200"
+                        title="Edit beneficiary"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    {onDeleteBeneficiary && (
+                      <button
+                        onClick={() => onDeleteBeneficiary(beneficiary.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors duration-200"
+                        title="Delete beneficiary"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
               {beneficiary.notes && (
