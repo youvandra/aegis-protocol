@@ -119,7 +119,7 @@ const RelayPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-[#D9D9D9]">
+    <div className="min-h-screen relative flex flex-col bg-[#F8F8F8]">
       <AestheticNavbar 
         leftLinkPath="/legacy"
         leftLinkText="Legacy"
