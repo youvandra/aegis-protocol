@@ -89,7 +89,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, on
           {/* Release Type Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Release Date
+              Release Type
             </label>
             <div className="space-y-3">
               <label className="flex items-center space-x-3 cursor-pointer">
@@ -101,40 +101,26 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, on
                   onChange={(e) => setReleaseType(e.target.value as 'one-time')}
                   className="w-4 h-4 text-black border-gray-300 focus:ring-black focus:ring-2"
                 />
-                <span className="text-sm text-gray-900">One-time</span>
-              </label>
-              
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="releaseType"
-                  value="monthly"
-                  checked={releaseType === 'monthly'}
-                  onChange={(e) => setReleaseType(e.target.value as 'monthly')}
-                  className="w-4 h-4 text-black border-gray-300 focus:ring-black focus:ring-2"
-                />
-                <span className="text-sm text-gray-900">Monthly</span>
+                <span className="text-sm text-gray-900">Specific Date Release</span>
               </label>
             </div>
           </div>
 
-          {/* Date Input for One-time */}
-          {releaseType === 'one-time' && (
-            <div>
-              <label htmlFor="releaseDate" className="block text-sm font-medium text-gray-700 mb-2">
-                Release Date
-              </label>
-              <input
-                type="date"
-                id="releaseDate"
-                value={releaseDate}
-                onChange={(e) => setReleaseDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
-                required
-              />
-            </div>
-          )}
+          {/* Date Input */}
+          <div>
+            <label htmlFor="releaseDate" className="block text-sm font-medium text-gray-700 mb-2">
+              Release Date
+            </label>
+            <input
+              type="date"
+              id="releaseDate"
+              value={releaseDate}
+              onChange={(e) => setReleaseDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
+              required
+            />
+          </div>
 
           {/* Buttons */}
           <div className="flex space-x-3 pt-4">
