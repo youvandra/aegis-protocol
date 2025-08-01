@@ -181,7 +181,7 @@ export const streamService = {
   async createGroup(
     groupName: string,
     walletAddress: string,
-    releaseDate: string
+    releaseDateTime: string
   ): Promise<Group | null> {
     try {
       // Set wallet context for RLS
@@ -191,7 +191,7 @@ export const streamService = {
         .from('groups')
         .insert({
           group_name: groupName,
-          release_date: releaseDate,
+          release_date: releaseDateTime,
           wallet_address: walletAddress.toLowerCase(),
           total_members: 0,
           total_amount: 0,
@@ -351,7 +351,7 @@ export const streamService = {
         .from('groups')
         .update({ 
           status: 'released',
-          release_date: new Date().toISOString().split('T')[0] // Set release date to today
+          release_date: new Date().toISOString() // Set release date to current timestamp
         })
         .eq('id', groupId)
         .eq('status', 'upcoming') // Only allow releasing upcoming groups

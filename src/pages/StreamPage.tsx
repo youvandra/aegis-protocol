@@ -56,7 +56,7 @@ const StreamPage: React.FC = () => {
 
   const handleCreateGroup = async (groupData: {
     groupName: string;
-    releaseDate?: string;
+    releaseDateTime?: string;
   }) => {
     if (!address) return;
     
@@ -65,7 +65,7 @@ const StreamPage: React.FC = () => {
       const newGroup = await streamService.createGroup(
         groupData.groupName,
         address,
-        groupData.releaseDate!
+        groupData.releaseDateTime!
       );
       
       if (newGroup) {

@@ -6,32 +6,32 @@ interface CreateGroupModalProps {
   onClose: () => void;
   onSubmit: (groupData: {
     groupName: string;
-    releaseDate?: string;
+    releaseDateTime?: string;
   }) => void;
 }
 
 const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [groupName, setGroupName] = useState('');
-  const [releaseDate, setReleaseDate] = useState('');
+  const [releaseDateTime, setReleaseDateTime] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (groupName.trim() && releaseDate) {
+    if (groupName.trim() && releaseDateTime) {
       onSubmit({
         groupName: groupName.trim(),
-        releaseDate: releaseDate
+        releaseDateTime: releaseDateTime
       });
       
       // Reset form
       setGroupName('');
-      setReleaseDate('');
+      setReleaseDateTime('');
     }
   };
 
   const handleClose = () => {
     setGroupName('');
-    setReleaseDate('');
+    setReleaseDateTime('');
     onClose();
   };
 
@@ -87,8 +87,8 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose, on
             <input
               type="datetime-local"
               id="releaseDateTime"
-              value={releaseDate}
-              onChange={(e) => setReleaseDate(e.target.value)}
+              value={releaseDateTime}
+              onChange={(e) => setReleaseDateTime(e.target.value)}
               min={new Date().toISOString().slice(0, 16)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
               required
