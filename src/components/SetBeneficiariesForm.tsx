@@ -95,26 +95,78 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({
         <div>
           <label htmlFor="percentage" className="block text-sm font-medium text-gray-700 mb-2">
             Inheritance Percentage
-            {currentTotalPercentage > 0 && (
-              <p className="text-xs text-gray-500 mb-2">
-                Remaining: {(100 - currentTotalPercentage).toFixed(1)}%
-              </p>
-            )}
           </label>
+            
+            {/* Allocation Status */}
+            <div className="mb-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Total Allocated:</span>
+                <span className={`font-semibold ${
+                  currentTotalPercentage > 100 ? 'text-red-600' : 
+                  currentTotalPercentage === 100 ? 'text-green-600' : 
+                  'text-gray-900'
+                }`}>
+                  {currentTotalPercentage.toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm mt-1">
+                <span className="text-gray-600">Remaining:</span>
+                <span className={`font-semibold ${
+                  (100 - currentTotalPercentage) < 0 ? 'text-red-600' : 
+                  (100 - currentTotalPercentage) === 0 ? 'text-green-600' : 
+                  'text-blue-600'
+                }`}>
+                  {Math.max(0, 100 - currentTotalPercentage).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+
           <div className="relative">
             <input
               type="number"
               id="percentage"
               value={percentage}
               onChange={(e) => setPercentage(e.target.value)}
-              placeholder="25"
-                max={100 - currentTotalPercentage}
+                className={`w-full px-4 py-3 pr-8 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                  currentTotalPercentage >= 100 
+                    ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                    : 'border-gray-300 focus:ring-black'
+                }`}
+                max={Math.max(0, 100 - currentTotalPercentage)}
               max="100"
               step="0.01"
               className="w-full px-4 py-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
-              required
-            />
-            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+            
+            {/* Dynamic Warning Messages */}
+            {currentTotalPercentage >= 100 ? (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-xs text-red-700 flex items-center">
+                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                  Estate is fully allocated. Remove or edit existing beneficiaries to add more.
+                </p>
+              </div>
+            ) : currentTotalPercentage > 80 ? (
+              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-xs text-yellow-700 flex items-center">
+                  <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                  Almost fully allocated. Only {(100 - currentTotalPercentage).toFixed(1)}% remaining.
+                </p>
+              </div>
+            ) : currentTotalPercentage > 0 ? (
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-xs text-blue-700 flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                  You can allocate up to {(100 - currentTotalPercentage).toFixed(1)}% more.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-md">
+                <p className="text-xs text-gray-600 flex items-center">
+                  <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                  Start by allocating a percentage of your estate.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

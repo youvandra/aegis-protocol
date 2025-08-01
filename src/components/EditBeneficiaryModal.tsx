@@ -141,6 +141,23 @@ const EditBeneficiaryModal: React.FC<EditBeneficiaryModalProps> = ({
             <label htmlFor="editPercentage" className="block text-sm font-medium text-gray-700 mb-2">
               Inheritance Percentage
             </label>
+            
+            {/* Allocation Status for Edit Modal */}
+            <div className="mb-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Other Beneficiaries:</span>
+                <span className="font-semibold text-gray-900">
+                  {(currentTotalPercentage - (beneficiary?.percentage || 0)).toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm mt-1">
+                <span className="text-gray-600">Available for this beneficiary:</span>
+                <span className="font-semibold text-blue-600">
+                  {maxAllowedPercentage.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+
             <div className="relative">
               <input
                 type="number"
@@ -151,14 +168,39 @@ const EditBeneficiaryModal: React.FC<EditBeneficiaryModalProps> = ({
                 min="0.01"
                 max={maxAllowedPercentage}
                 step="0.01"
-                className="w-full px-4 py-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 pr-8 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                  parseFloat(percentage) > maxAllowedPercentage
+                    ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                    : 'border-gray-300 focus:ring-black'
+                }`}
                 required
               />
               <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Maximum allowed: {maxAllowedPercentage.toFixed(1)}%
-            </p>
+            
+            {/* Dynamic Warning for Edit Modal */}
+            {parseFloat(percentage) > maxAllowedPercentage ? (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-xs text-red-700 flex items-center">
+                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                  Exceeds available allocation. Maximum allowed: {maxAllowedPercentage.toFixed(1)}%
+                </p>
+              </div>
+            ) : parseFloat(percentage) > 0 ? (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-xs text-green-700 flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  Valid allocation within available percentage.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-md">
+                <p className="text-xs text-gray-600 flex items-center">
+                  <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                  Enter a percentage between 0.01% and {maxAllowedPercentage.toFixed(1)}%
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Notes Input */}
