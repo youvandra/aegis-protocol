@@ -57,7 +57,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
   };
 
   const renderActionButton = () => {
-    // When relay is initiated, receiver gets approve/reject buttons
+    // Receiver gets approve/reject buttons when relay is initiated
     if (isReceiver && item.status === 'Request Initiated') {
       return (
         <div className="flex space-x-2">
@@ -66,7 +66,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
               e.stopPropagation();
               handleAction('approve');
             }}
-            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
           >
             Approve
           </button>
@@ -75,7 +75,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
               e.stopPropagation();
               handleAction('reject');
             }}
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
           >
             Reject
           </button>
@@ -83,7 +83,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
       );
     }
     
-    // After receiver approves, sender gets execute/cancel buttons
+    // Sender gets execute/cancel buttons after receiver approves
     if (isSender && item.status === 'Waiting for Receiver\'s Approval') {
       return (
         <div className="flex space-x-2">
@@ -92,7 +92,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
               e.stopPropagation();
               handleAction('execute');
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
           >
             Execute
           </button>
@@ -101,7 +101,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
               e.stopPropagation();
               handleAction('cancel');
             }}
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
           >
             Cancel
           </button>
@@ -109,7 +109,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
       );
     }
     
-    // Senders can only cancel if still in initial state and no receiver action yet
+    // Sender can cancel if still in initial state (before receiver action)
     if (isSender && item.status === 'Request Initiated') {
       return (
         <button
@@ -124,6 +124,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
       );
     }
     
+    // No actions available for completed or rejected relays
     return null;
   };
 
