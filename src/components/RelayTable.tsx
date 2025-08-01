@@ -4,9 +4,11 @@ import { RelayItem } from '../types/relay';
 
 interface RelayTableProps {
   data: RelayItem[];
+  currentWallet: string;
+  onRelayAction: (relayId: string, action: 'approve' | 'reject' | 'execute' | 'cancel') => void;
 }
 
-const RelayTable: React.FC<RelayTableProps> = ({ data }) => {
+const RelayTable: React.FC<RelayTableProps> = ({ data, currentWallet, onRelayAction }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -37,12 +39,17 @@ const RelayTable: React.FC<RelayTableProps> = ({ data }) => {
             {data.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                  No data available
+                  No relays available
                 </td>
               </tr>
             ) : (
               data.map((item) => (
-                <RelayTableRow key={item.id} item={item} />
+                <RelayTableRow 
+                  key={item.id} 
+                  item={item} 
+                  currentWallet={currentWallet}
+                  onRelayAction={onRelayAction}
+                />
               ))
             )}
           </tbody>

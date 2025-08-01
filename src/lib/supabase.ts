@@ -334,6 +334,136 @@ export const streamService = {
   }
 };
 
+// Relay interface for the database
+export interface Relay {
+  id: string;
+  relay_number: string;
+  sender_address: string;
+  receiver_address: string;
+  amount: number;
+  status: 'Request Initiated' | 'Waiting for Receiver\'s Approval' | 'Waiting for Sender to Execute' | 'Complete' | 'Rejected';
+  transaction_hash?: string;
+  gas_used?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Relay service for managing relay operations
+export const relayService = {
+  async createRelay(
+    senderAddress: string,
+    receiverAddress: string,
+    amount: number
+  ): Promise<Relay | null> {
+    try {
+      setWalletContext(senderAddress);
+      console.log('Creating relay:', { senderAddress, receiverAddress, amount });
+      
+      const { data, error } = await supabase
+        .from('relays')
+        .insert({
+          sender_address: senderAddress.toLowerCase(),
+          receiver_address: receiverAddress.toLowerCase(),
+          amount: amount,
+          status: 'Request Initiated'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating relay:', error);
+        return null;
+      }
+
+      console.log('Created relay:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in createRelay:', error);
+      return null;
+    }
+  },
+
+  async getRelays(walletAddress: string): Promise<Relay[]> {
+    try {
+      setWalletContext(walletAddress);
+      console.log('Fetching relays for wallet:', walletAddress);
+      
+      const { data, error } = await supabase
+        .from('relays')
+        .select('*')
+        .or(`sender_address.eq.${walletAddress.toLowerCase()},receiver_address.eq.${walletAddress.toLowerCase()}`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching relays:', error);
+        return [];
+      }
+
+      console.log('Fetched relays:', data);
+      return data || [];
+    } catch (error) {
+      console.error('Error in getRelays:', error);
+      return [];
+    }
+  },
+
+  async updateRelayStatus(
+    relayId: string,
+    status: Relay['status'],
+    walletAddress: string,
+    transactionHash?: string,
+    gasUsed?: string
+  ): Promise<Relay | null> {
+    try {
+      setWalletContext(walletAddress);
+      console.log('Updating relay status:', { relayId, status, walletAddress });
+      
+      const updateData: any = { status };
+      if (transactionHash) updateData.transaction_hash = transactionHash;
+      if (gasUsed) updateData.gas_used = gasUsed;
+      
+      const { data, error } = await supabase
+        .from('relays')
+        .update(updateData)
+        .eq('id', relayId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating relay status:', error);
+        return null;
+      }
+
+      console.log('Updated relay:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in updateRelayStatus:', error);
+      return null;
+    }
+  },
+
+  async approveRelay(relayId: string, receiverAddress: string): Promise<Relay | null> {
+    return this.updateRelayStatus(relayId, 'Waiting for Sender to Execute', receiverAddress);
+  },
+
+  async rejectRelay(relayId: string, receiverAddress: string): Promise<Relay | null> {
+    return this.updateRelayStatus(relayId, 'Rejected', receiverAddress);
+  },
+
+  async executeRelay(
+    relayId: string, 
+    senderAddress: string, 
+    transactionHash: string, 
+    gasUsed?: string
+  ): Promise<Relay | null> {
+    return this.updateRelayStatus(relayId, 'Complete', senderAddress, transactionHash, gasUsed);
+  },
+
+  async cancelRelay(relayId: string, senderAddress: string): Promise<Relay | null> {
+    return this.updateRelayStatus(relayId, 'Rejected', senderAddress);
+  }
+};
+
 // Legacy plan interface for the database
 export interface LegacyPlan {
   id: string;

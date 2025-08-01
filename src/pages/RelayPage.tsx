@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Send } from 'lucide-react';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import AestheticNavbar from '../components/AestheticNavbar';
@@ -7,73 +7,49 @@ import RelayTable from '../components/RelayTable';
 import CreateRelayModal from '../components/CreateRelayModal';
 import { RelayItem } from '../types/relay';
 import { useWalletTracking } from '../hooks/useWalletTracking';
+import { relayService } from '../lib/supabase';
 
 const RelayPage: React.FC = () => {
-  const { isConnected } = useWalletTracking();
+  const { isConnected, address } = useWalletTracking();
   const { open } = useWeb3Modal();
   const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
   const [showCreateRelayModal, setShowCreateRelayModal] = useState(false);
+  const [relays, setRelays] = useState<RelayItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Sample data for queue
-  const queueData: RelayItem[] = [
-    {
-      id: '1',
-      number: 'RLY-001',
-      type: 'send',
-      amount: '1,250.50 HBAR',
-      timeCreated: '2025-01-27 14:30:25',
-      status: 'Request Initiated',
-      details: {
-        toAddress: '0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c',
-        transactionHash: '0x1234567890abcdef...',
-        gasUsed: '21,000'
-      }
-    },
-    {
-      id: '2',
-      number: 'RLY-002',
-      type: 'receive',
-      amount: '500.00 HBAR',
-      timeCreated: '2025-01-27 13:15:10',
-      status: 'Waiting for Receiver\'s Approval',
-      details: {
-        fromAddress: '0x8ba1f109551bD432803012645Hac136c22C177ec',
-        transactionHash: '0xabcdef1234567890...',
-        gasUsed: '21,000'
-      }
+  // Load relays when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      loadRelays();
+    } else {
+      setRelays([]);
     }
-  ];
+  }, [isConnected, address]);
 
-  // Sample data for history
-  const historyData: RelayItem[] = [
-    {
-      id: '3',
-      number: 'RLY-003',
-      type: 'send',
-      amount: '2,000.00 HBAR',
-      timeCreated: '2025-01-26 16:45:30',
-      status: 'Complete',
-      details: {
-        toAddress: '0x9876543210fedcba...',
-        transactionHash: '0xfedcba0987654321...',
-        gasUsed: '21,000'
-      }
-    },
-    {
-      id: '4',
-      number: 'RLY-004',
-      type: 'receive',
-      amount: '750.25 HBAR',
-      timeCreated: '2025-01-25 09:20:15',
-      status: 'Complete',
-      details: {
-        fromAddress: '0x1357924680acebd...',
-        transactionHash: '0x2468ace13579bdf...',
-        gasUsed: '21,000'
-      }
+  const loadRelays = async () => {
+    if (!address) return;
+    
+    setLoading(true);
+    try {
+      console.log('Loading relays for wallet:', address);
+      const relaysData = await relayService.getRelays(address);
+      console.log('Loaded relays:', relaysData);
+      setRelays(relaysData);
+    } catch (error) {
+      console.error('Error loading relays:', error);
+      setRelays([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
+  // Filter relays by status for queue vs history
+  const queueRelays = relays.filter(relay => 
+    relay.status !== 'Complete' && relay.status !== 'Rejected'
+  );
+  const historyRelays = relays.filter(relay => 
+    relay.status === 'Complete' || relay.status === 'Rejected'
+  );
   const handleCreateRelay = () => {
     setShowCreateRelayModal(true);
   };
@@ -82,9 +58,64 @@ const RelayPage: React.FC = () => {
     setShowCreateRelayModal(false);
   };
 
-  const handleCreateRelaySubmit = (receiverAddress: string, amount: string) => {
-    // TODO: Implement actual relay creation logic
-    console.log('Creating relay:', { receiverAddress, amount });
+  const handleCreateRelaySubmit = async (receiverAddress: string, amount: string) => {
+    if (!address) return;
+    
+    try {
+      console.log('Creating relay:', { receiverAddress, amount });
+      const newRelay = await relayService.createRelay(
+        address,
+        receiverAddress,
+        parseFloat(amount)
+      );
+      
+      if (newRelay) {
+        console.log('Relay created successfully:', newRelay);
+        await loadRelays();
+        setShowCreateRelayModal(false);
+      } else {
+        console.error('Failed to create relay - no data returned');
+        alert('Failed to create relay. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating relay:', error);
+      alert('Failed to create relay. Please try again.');
+    }
+  };
+
+  const handleRelayAction = async (relayId: string, action: 'approve' | 'reject' | 'execute' | 'cancel') => {
+    if (!address) return;
+    
+    try {
+      let result = null;
+      
+      switch (action) {
+        case 'approve':
+          result = await relayService.approveRelay(relayId, address);
+          break;
+        case 'reject':
+          result = await relayService.rejectRelay(relayId, address);
+          break;
+        case 'execute':
+          // In a real implementation, this would trigger the actual blockchain transaction
+          const mockTxHash = '0x' + Math.random().toString(16).substr(2, 40);
+          result = await relayService.executeRelay(relayId, address, mockTxHash, '21,000');
+          break;
+        case 'cancel':
+          result = await relayService.cancelRelay(relayId, address);
+          break;
+      }
+      
+      if (result) {
+        console.log(`Relay ${action} successful:`, result);
+        await loadRelays();
+      } else {
+        alert(`Failed to ${action} relay. Please try again.`);
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing relay:`, error);
+      alert(`Failed to ${action} relay. Please try again.`);
+    }
   };
 
   return (
@@ -156,9 +187,18 @@ const RelayPage: React.FC = () => {
 
               {/* Table */}
               <div className="mb-8">
-                <RelayTable 
-                  data={activeTab === 'queue' ? queueData : historyData} 
-                />
+                {loading ? (
+                  <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading relays...</p>
+                  </div>
+                ) : (
+                  <RelayTable 
+                    data={activeTab === 'queue' ? queueRelays : historyRelays}
+                    currentWallet={address || ''}
+                    onRelayAction={handleRelayAction}
+                  />
+                )}
               </div>
             </>
           )}

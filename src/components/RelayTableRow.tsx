@@ -4,10 +4,17 @@ import { RelayItem } from '../types/relay';
 
 interface RelayTableRowProps {
   item: RelayItem;
+  currentWallet: string;
+  onRelayAction: (relayId: string, action: 'approve' | 'reject' | 'execute' | 'cancel') => void;
 }
 
-const RelayTableRow: React.FC<RelayTableRowProps> = ({ item }) => {
+const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRelayAction }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Determine if current user is sender or receiver
+  const isSender = item.sender_address.toLowerCase() === currentWallet.toLowerCase();
+  const isReceiver = item.receiver_address.toLowerCase() === currentWallet.toLowerCase();
+  const relayType = isSender ? 'send' : 'receive';
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -26,18 +33,87 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item }) => {
     }
   };
 
-  const getTypeColor = (type: string) => {
-    return type === 'receive' ? 'text-blue-600 bg-blue-50' : 'text-purple-600 bg-purple-50';
+  const getTypeColor = (relayType: string) => {
+    return relayType === 'receive' ? 'text-blue-600 bg-blue-50' : 'text-purple-600 bg-purple-50';
   };
 
-  const handleCancel = () => {
-    // TODO: Implement cancel functionality
-    console.log('Cancel relay:', item.id);
+  const handleAction = (action: 'approve' | 'reject' | 'execute' | 'cancel') => {
+    onRelayAction(item.id, action);
   };
 
-  const handleExecute = () => {
-    // TODO: Implement execute functionality
-    console.log('Execute relay:', item.id);
+  const formatAmount = (amount: number) => {
+    return `${amount.toLocaleString()} HBAR`;
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const renderActionButton = () => {
+    // Receivers can approve/reject when waiting for approval
+    if (isReceiver && item.status === 'Waiting for Receiver\'s Approval') {
+      return (
+        <div className="flex space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAction('approve');
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+          >
+            Approve
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAction('reject');
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+          >
+            Reject
+          </button>
+        </div>
+      );
+    }
+    
+    // Senders can execute when waiting for execution
+    if (isSender && item.status === 'Waiting for Sender to Execute') {
+      return (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAction('execute');
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+        >
+          Execute
+        </button>
+      );
+    }
+    
+    // Senders can cancel if still in initial state
+    if (isSender && item.status === 'Request Initiated') {
+      return (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAction('cancel');
+          }}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+        >
+          Cancel
+        </button>
+      );
+    }
+    
+    return null;
   };
 
   return (
@@ -53,19 +129,19 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item }) => {
             ) : (
               <ChevronDown className="w-4 h-4 mr-2 text-gray-400" />
             )}
-            {item.number}
+            {item.relay_number}
           </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(item.type)}`}>
-            {item.type}
+          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(relayType)}`}>
+            {relayType}
           </span>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-          {item.amount}
+          {formatAmount(item.amount)}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          {item.timeCreated}
+          {formatDateTime(item.created_at)}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
@@ -73,28 +149,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item }) => {
           </span>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          {item.status === 'Waiting for Receiver\'s Approval' && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCancel();
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-            >
-              Cancel
-            </button>
-          )}
-          {item.status === 'Waiting for Sender to Execute' && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleExecute();
-              }}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-            >
-              Execute
-            </button>
-          )}
+          {renderActionButton()}
         </td>
       </tr>
       {isExpanded && (
@@ -102,30 +157,32 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item }) => {
           <td colSpan={6} className="px-6 py-4">
             <div className="space-y-2 text-sm">
               <div className="grid grid-cols-2 gap-4">
-                {item.details?.fromAddress && (
-                  <div>
-                    <span className="font-medium text-gray-700">From Address:</span>
-                    <p className="text-gray-600 font-mono text-xs break-all">{item.details.fromAddress}</p>
-                  </div>
-                )}
-                {item.details?.toAddress && (
-                  <div>
-                    <span className="font-medium text-gray-700">To Address:</span>
-                    <p className="text-gray-600 font-mono text-xs break-all">{item.details.toAddress}</p>
-                  </div>
-                )}
-                {item.details?.transactionHash && (
+                <div>
+                  <span className="font-medium text-gray-700">From Address:</span>
+                  <p className="text-gray-600 font-mono text-xs break-all">{item.sender_address}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">To Address:</span>
+                  <p className="text-gray-600 font-mono text-xs break-all">{item.receiver_address}</p>
+                </div>
+                {item.transaction_hash && (
                   <div>
                     <span className="font-medium text-gray-700">Transaction Hash:</span>
-                    <p className="text-gray-600 font-mono text-xs break-all">{item.details.transactionHash}</p>
+                    <p className="text-gray-600 font-mono text-xs break-all">{item.transaction_hash}</p>
                   </div>
                 )}
-                {item.details?.gasUsed && (
+                {item.gas_used && (
                   <div>
                     <span className="font-medium text-gray-700">Gas Used:</span>
-                    <p className="text-gray-600">{item.details.gasUsed}</p>
+                    <p className="text-gray-600">{item.gas_used}</p>
                   </div>
                 )}
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Created: {formatDateTime(item.created_at)}</span>
+                  <span>Updated: {formatDateTime(item.updated_at)}</span>
+                </div>
               </div>
             </div>
           </td>
