@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
-import { Shield, Clock } from 'lucide-react';
+import { Shield, Clock, HeartPulse } from 'lucide-react';
+import { useChainId } from 'wagmi';
 import AestheticNavbar from '../components/AestheticNavbar';
 import SetBeneficiariesForm from '../components/SetBeneficiariesForm';
 import BeneficiariesDisplay from '../components/BeneficiariesDisplay';
@@ -11,10 +12,12 @@ import ConfirmationDialog from '../components/ConfirmationDialog';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
 import { useWalletTracking } from '../hooks/useWalletTracking';
-import { legacyService } from '../lib/supabase';
+import { legacyService, walletAccountService } from '../lib/supabase';
+import { formatDuration } from '../utils/time';
 
 const LegacyPage: React.FC = () => {
   const { isConnected, address } = useWalletTracking();
+  const chainId = useChainId();
   const { open } = useWeb3Modal();
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [legacyMoment, setLegacyMoment] = useState<LegacyMoment | null>(null);
@@ -22,11 +25,15 @@ const LegacyPage: React.FC = () => {
   const [showEditBeneficiaryModal, setShowEditBeneficiaryModal] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showMomentConfirmation, setShowMomentConfirmation] = useState(false);
+  const [showHeartbeatConfirmation, setShowHeartbeatConfirmation] = useState(false);
   const [pendingDeleteBeneficiaryId, setPendingDeleteBeneficiaryId] = useState<string | null>(null);
   const [pendingMomentConfig, setPendingMomentConfig] = useState<LegacyMoment | null>(null);
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null);
   const [loading, setLoading] = useState(false);
+  const [heartbeatLoading, setHeartbeatLoading] = useState(false);
   const [legacyPlanId, setLegacyPlanId] = useState<string | null>(null);
+  const [lastConnectedAt, setLastConnectedAt] = useState<string | null>(null);
+  const [timeInactive, setTimeInactive] = useState<string>('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
@@ -56,6 +63,26 @@ const LegacyPage: React.FC = () => {
     }
   }, [showToast]);
 
+  // Update time inactive every minute
+  useEffect(() => {
+    if (!lastConnectedAt) return;
+
+    const updateTimeInactive = () => {
+      const now = new Date();
+      const lastConnected = new Date(lastConnectedAt);
+      const timeDiff = now.getTime() - lastConnected.getTime();
+      setTimeInactive(formatDuration(timeDiff));
+    };
+
+    // Update immediately
+    updateTimeInactive();
+
+    // Update every minute
+    const interval = setInterval(updateTimeInactive, 60000);
+
+    return () => clearInterval(interval);
+  }, [lastConnectedAt]);
+
   const loadLegacyData = async () => {
     if (!address) return;
     
@@ -76,6 +103,12 @@ const LegacyPage: React.FC = () => {
         // Load beneficiaries for this plan
         const beneficiariesData = await legacyService.getBeneficiaries(legacyPlan.id);
         setBeneficiaries(beneficiariesData);
+      }
+
+      // Load user's last connected timestamp
+      const userData = await walletAccountService.getWalletAccount(address);
+      if (userData) {
+        setLastConnectedAt(userData.last_connected_at);
       }
     } catch (error) {
       console.error('Error loading legacy data:', error);
@@ -259,6 +292,44 @@ const LegacyPage: React.FC = () => {
     setPendingDeleteBeneficiaryId(null);
   };
 
+  const handleHeartbeatClick = () => {
+    setShowHeartbeatConfirmation(true);
+  };
+
+  const confirmHeartbeat = async () => {
+    if (!address) return;
+    
+    setHeartbeatLoading(true);
+    try {
+      console.log('Refreshing heartbeat for wallet:', address);
+      const updatedUser = await walletAccountService.upsertWalletAccount(address, chainId);
+      
+      if (updatedUser) {
+        setLastConnectedAt(updatedUser.last_connected_at);
+        setShowHeartbeatConfirmation(false);
+        setToastMessage('Activity refreshed successfully!');
+        setToastType('success');
+        setShowToast(true);
+        console.log('Heartbeat refreshed:', updatedUser);
+      } else {
+        setToastMessage('Failed to refresh activity. Please try again.');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error refreshing heartbeat:', error);
+      setToastMessage('Failed to refresh activity. Please try again.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setHeartbeatLoading(false);
+    }
+  };
+
+  const cancelHeartbeat = () => {
+    setShowHeartbeatConfirmation(false);
+  };
+
   // Get the beneficiary being deleted for the confirmation dialog
   const beneficiaryToDelete = beneficiaries.find(b => b.id === pendingDeleteBeneficiaryId);
 
@@ -294,8 +365,42 @@ const LegacyPage: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* Set Moment Button */}
-              <div className="mb-8 flex flex-col items-end">
+              {/* Action Buttons and Time Display */}
+              <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                {/* Time Inactive Display */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-3 shadow-md">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-600">Inactive for:</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {timeInactive || 'Loading...'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleHeartbeatClick}
+                    disabled={heartbeatLoading}
+                    className={`px-6 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center space-x-2 ${
+                      heartbeatLoading
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-red-600 text-white hover:bg-red-700'
+                    }`}
+                  >
+                    {heartbeatLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Refreshing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <HeartPulse className="w-5 h-5" />
+                        <span>Heartbeat</span>
+                      </>
+                    )}
+                  </button>
                 <button
                   onClick={() => setShowSetMomentModal(true)}
                   className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium flex items-center space-x-2"
@@ -303,6 +408,7 @@ const LegacyPage: React.FC = () => {
                   <Clock className="w-5 h-5" />
                   <span>Set Moment</span>
                 </button>
+                </div>
               </div>
 
             <div className="flex flex-col md:flex-row md:gap-8 gap-6">
@@ -373,13 +479,24 @@ const LegacyPage: React.FC = () => {
         onCancel={cancelSetMoment}
       />
       
+      {/* Heartbeat Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showHeartbeatConfirmation}
+        title="Refresh Activity"
+        message="This will update your last activity timestamp and reset your inactivity period. Your legacy plan activation countdown will restart from this moment."
+        confirmText="Refresh Activity"
+        cancelText="Cancel"
+        type="info"
+        onConfirm={confirmHeartbeat}
+        onCancel={cancelHeartbeat}
+      />
+      
       {/* Toast Notification */}
       {showToast && (
         <Toast
           message={toastMessage}
           type={toastType}
           onClose={() => setShowToast(false)}
-          existingBeneficiaries={beneficiaries}
         />
       )}
     </div>
