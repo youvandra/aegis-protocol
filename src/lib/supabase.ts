@@ -703,6 +703,10 @@ export const legacyService = {
       return true;
     } catch (error) {
       console.error('Error in deleteBeneficiary:', error);
+      return false;
+    }
+  },
+
   async updateBeneficiary(
     beneficiaryId: string,
     beneficiaryData: Omit<Beneficiary, 'id'>
@@ -737,12 +741,12 @@ export const legacyService = {
         .eq('id', beneficiaryId)
         .select()
         .single();
-      return false;
+
       if (error) {
         console.error('Error updating beneficiary:', error);
         return null;
       }
-    }
+
       // Transform database format to component format
       const transformedBeneficiary: Beneficiary = {
         id: data.id,
@@ -751,12 +755,13 @@ export const legacyService = {
         percentage: Number(data.percentage),
         notes: data.notes || '',
       };
-  },
+
       console.log('Updated beneficiary:', transformedBeneficiary);
       return transformedBeneficiary;
     } catch (error) {
       console.error('Error in updateBeneficiary:', error);
       return null;
     }
+  }
   }
 };
