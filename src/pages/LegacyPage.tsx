@@ -22,6 +22,9 @@ const LegacyPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [legacyPlanId, setLegacyPlanId] = useState<string | null>(null);
 
+  // Calculate current total percentage
+  const currentTotalPercentage = beneficiaries.reduce((sum, beneficiary) => sum + beneficiary.percentage, 0);
+
   // Load legacy plan and beneficiaries when wallet connects
   useEffect(() => {
     if (isConnected && address) {
@@ -132,6 +135,55 @@ const LegacyPage: React.FC = () => {
     setShowSetMomentModal(false);
   };
 
+  const handleEditBeneficiary = (beneficiary: Beneficiary) => {
+    setEditingBeneficiary(beneficiary);
+    setShowEditBeneficiaryModal(true);
+  };
+
+  const handleCloseEditBeneficiaryModal = () => {
+    setShowEditBeneficiaryModal(false);
+    setEditingBeneficiary(null);
+  };
+
+  const handleUpdateBeneficiary = async (beneficiaryId: string, beneficiaryData: Omit<Beneficiary, 'id'>) => {
+    if (!address) return;
+    
+    try {
+      const updatedBeneficiary = await legacyService.updateBeneficiary(beneficiaryId, beneficiaryData);
+      if (updatedBeneficiary) {
+        setBeneficiaries(prev => 
+          prev.map(b => b.id === beneficiaryId ? updatedBeneficiary : b)
+        );
+        handleCloseEditBeneficiaryModal();
+      } else {
+        alert('Failed to update beneficiary. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating beneficiary:', error);
+      alert('Failed to update beneficiary. Please try again.');
+    }
+  };
+
+  const handleDeleteBeneficiary = async (beneficiaryId: string) => {
+    if (!address) return;
+    
+    if (!confirm('Are you sure you want to delete this beneficiary?')) {
+      return;
+    }
+    
+    try {
+      const success = await legacyService.deleteBeneficiary(beneficiaryId);
+      if (success) {
+        setBeneficiaries(prev => prev.filter(b => b.id !== beneficiaryId));
+      } else {
+        alert('Failed to delete beneficiary. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting beneficiary:', error);
+      alert('Failed to delete beneficiary. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen relative flex flex-col bg-[#F8F8F8]">
       <AestheticNavbar 
@@ -192,6 +244,7 @@ const LegacyPage: React.FC = () => {
                 <SetBeneficiariesForm 
                   onAddBeneficiary={handleAddBeneficiary}
                   loading={loading}
+                  currentTotalPercentage={currentTotalPercentage}
                 />
               </div>
               
@@ -201,6 +254,8 @@ const LegacyPage: React.FC = () => {
                   beneficiaries={beneficiaries} 
                   legacyMoment={legacyMoment}
                   loading={loading}
+                  onEditBeneficiary={handleEditBeneficiary}
+                  onDeleteBeneficiary={handleDeleteBeneficiary}
                 />
               </div>
             </div>
