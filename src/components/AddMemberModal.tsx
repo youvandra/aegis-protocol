@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Plus } from 'lucide-react';
+import { X, UserPlus, Plus, AlertTriangle } from 'lucide-react';
 import { Group } from '../types/stream';
+import { useAccount } from 'wagmi';
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   onCreateGroup,
   groups 
 }) => {
+  const { address: currentAddress } = useAccount();
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [name, setName] = useState('');
   const [memberAddress, setMemberAddress] = useState('');
@@ -30,8 +32,17 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   // Filter to only show upcoming groups
   const upcomingGroups = groups.filter(group => group.status === 'upcoming');
 
+  // Check if user is trying to add their own address
+  const isSelfAdd = currentAddress && memberAddress.toLowerCase() === currentAddress.toLowerCase();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent self-add
+    if (isSelfAdd) {
+      alert('You cannot add your own wallet address as a member. Please enter a different address.');
+      return;
+    }
     
     // Additional validation to ensure all fields have values
     if (!selectedGroupId || !name.trim() || !memberAddress.trim() || !amount.trim()) {
@@ -178,9 +189,19 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
               value={memberAddress}
               onChange={(e) => setMemberAddress(e.target.value)}
               placeholder="0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 font-mono text-sm"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 font-mono text-sm ${
+                isSelfAdd 
+                  ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                  : 'border-gray-300 focus:ring-black'
+              }`}
               required
             />
+            {isSelfAdd && (
+              <div className="mt-2 flex items-center space-x-2 text-red-600">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm">You cannot add your own address as a member</span>
+              </div>
+            )}
           </div>
 
           {/* Amount Input */}
@@ -212,8 +233,12 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={upcomingGroups.length === 0}
-              className="flex-1 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
+              disabled={upcomingGroups.length === 0 || isSelfAdd}
+              className={`flex-1 px-4 py-2 rounded-md transition-colors duration-200 font-medium ${
+                upcomingGroups.length === 0 || isSelfAdd
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
             >
               Add Member
             </button>
