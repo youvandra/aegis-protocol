@@ -200,7 +200,7 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
           {hasExpiration && (
             <div>
               <label htmlFor="expiresAt" className="block text-sm font-medium text-gray-700 mb-2">
-                Expires At (UTC Timezone)
+                Expires At 
               </label>
               
               <input
