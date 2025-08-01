@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Calendar, Repeat, Trash2, Play } from 'lucide-react';
 import { Group } from '../types/stream';
+import ConfirmationDialog from './ConfirmationDialog';
 
 interface StreamTableRowProps {
   group: Group;
@@ -10,6 +11,8 @@ interface StreamTableRowProps {
 
 const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, onReleaseGroup }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showReleaseDialog, setShowReleaseDialog] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -38,18 +41,22 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, o
 
   const handleDeleteGroup = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row expansion when clicking delete
-    
-    if (window.confirm(`Are you sure you want to delete the group "${group.group_name}"? This action cannot be undone and will remove all members from this group.`)) {
-      onDeleteGroup?.(group.id);
-    }
+    setShowDeleteDialog(true);
   };
 
   const handleReleaseGroup = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row expansion when clicking release
-    
-    if (window.confirm(`Are you sure you want to release the group "${group.group_name}" now? This will immediately make the funds available to all members.`)) {
-      onReleaseGroup?.(group.id);
-    }
+    setShowReleaseDialog(true);
+  };
+
+  const confirmDelete = () => {
+    onDeleteGroup?.(group.id);
+    setShowDeleteDialog(false);
+  };
+
+  const confirmRelease = () => {
+    onReleaseGroup?.(group.id);
+    setShowReleaseDialog(false);
   };
 
   return (
@@ -138,6 +145,30 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, o
           </td>
         </tr>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        title="Delete Group"
+        message={`Are you sure you want to delete the group "${group.group_name}"? This action cannot be undone and will remove all members from this group.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteDialog(false)}
+      />
+
+      {/* Release Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showReleaseDialog}
+        title="Release Group"
+        message={`Are you sure you want to release the group "${group.group_name}" now? This will immediately make the funds available to all members and prevent further modifications.`}
+        confirmText="Release Now"
+        cancelText="Cancel"
+        type="warning"
+        onConfirm={confirmRelease}
+        onCancel={() => setShowReleaseDialog(false)}
+      />
     </>
   );
 };

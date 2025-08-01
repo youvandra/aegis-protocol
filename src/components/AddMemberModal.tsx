@@ -27,6 +27,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const [memberAddress, setMemberAddress] = useState('');
   const [amount, setAmount] = useState('');
 
+  // Filter to only show upcoming groups
+  const upcomingGroups = groups.filter(group => group.status === 'upcoming');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -47,7 +50,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       onSubmit({
         groupId: selectedGroupId,
         name: name.trim(),
-        memberAddress: memberAddress.trim(),
+        address: memberAddress.trim(),
         amount: amount.trim(),
       });
       
@@ -105,9 +108,10 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             <label htmlFor="groupSelect" className="block text-sm font-medium text-gray-700 mb-2">
               Select Group
             </label>
-            {groups.length === 0 ? (
+            {upcomingGroups.length === 0 ? (
               <div className="text-center py-4">
-                <p className="text-sm text-gray-500 mb-3">No groups available</p>
+                <p className="text-sm text-gray-500 mb-3">No upcoming groups available</p>
+                <p className="text-xs text-gray-400 mb-3">Members can only be added to upcoming groups</p>
                 <button
                   type="button"
                   onClick={handleCreateGroupFromDropdown}
@@ -127,9 +131,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   required
                 >
                   <option value="">Choose a group...</option>
-                  {groups.map((group) => (
+                  {upcomingGroups.map((group) => (
                     <option key={group.id} value={group.id}>
-                      {group.groupName}
+                      {group.group_name}
                     </option>
                   ))}
                 </select>
@@ -208,7 +212,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={groups.length === 0}
+              disabled={upcomingGroups.length === 0}
               className="flex-1 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
             >
               Add Member
