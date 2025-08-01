@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Group, Member } from '../types/stream';
+import { Beneficiary } from '../types/beneficiary';
+import { LegacyMoment } from '../types/legacyMoment';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -312,6 +314,203 @@ export const streamService = {
     } catch (error) {
       console.error('Error in addMemberToGroup:', error);
       return null;
+    }
+  }
+};
+
+// Legacy plan interface for the database
+export interface LegacyPlan {
+  id: string;
+  wallet_address: string;
+  moment_type: 'specificDate' | 'ifImGone';
+  moment_value: string;
+  moment_label: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Legacy service for managing legacy plans and beneficiaries
+export const legacyService = {
+  async createOrUpdateLegacyPlan(
+    walletAddress: string,
+    momentConfig: LegacyMoment
+  ): Promise<LegacyPlan | null> {
+    try {
+      console.log('Creating/updating legacy plan:', { walletAddress, momentConfig });
+      
+      // First, check if a legacy plan already exists for this wallet
+      const { data: existingPlan, error: fetchError } = await supabase
+        .from('legacy_plans')
+        .select('*')
+        .eq('wallet_address', walletAddress.toLowerCase())
+        .eq('is_active', true)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching existing legacy plan:', fetchError);
+        return null;
+      }
+
+      if (existingPlan) {
+        // Update existing plan
+        const { data, error } = await supabase
+          .from('legacy_plans')
+          .update({
+            moment_type: momentConfig.type,
+            moment_value: momentConfig.value,
+            moment_label: momentConfig.label,
+          })
+          .eq('id', existingPlan.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating legacy plan:', error);
+          return null;
+        }
+
+        console.log('Updated legacy plan:', data);
+        return data;
+      } else {
+        // Create new plan
+        const { data, error } = await supabase
+          .from('legacy_plans')
+          .insert({
+            wallet_address: walletAddress.toLowerCase(),
+            moment_type: momentConfig.type,
+            moment_value: momentConfig.value,
+            moment_label: momentConfig.label,
+            is_active: true,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating legacy plan:', error);
+          return null;
+        }
+
+        console.log('Created new legacy plan:', data);
+        return data;
+      }
+    } catch (error) {
+      console.error('Error in createOrUpdateLegacyPlan:', error);
+      return null;
+    }
+  },
+
+  async getLegacyPlan(walletAddress: string): Promise<LegacyPlan | null> {
+    try {
+      const { data, error } = await supabase
+        .from('legacy_plans')
+        .select('*')
+        .eq('wallet_address', walletAddress.toLowerCase())
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No legacy plan found
+          return null;
+        }
+        console.error('Error fetching legacy plan:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getLegacyPlan:', error);
+      return null;
+    }
+  },
+
+  async addBeneficiary(
+    legacyPlanId: string,
+    beneficiaryData: Omit<Beneficiary, 'id'>
+  ): Promise<Beneficiary | null> {
+    try {
+      console.log('Adding beneficiary:', { legacyPlanId, beneficiaryData });
+      
+      const { data, error } = await supabase
+        .from('beneficiaries')
+        .insert({
+          legacy_plan_id: legacyPlanId,
+          name: beneficiaryData.name,
+          wallet_address: beneficiaryData.address.toLowerCase(),
+          percentage: beneficiaryData.percentage,
+          notes: beneficiaryData.notes || '',
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding beneficiary:', error);
+        return null;
+      }
+
+      // Transform database format to component format
+      const transformedBeneficiary: Beneficiary = {
+        id: data.id,
+        name: data.name,
+        address: data.wallet_address,
+        percentage: Number(data.percentage),
+        notes: data.notes || '',
+      };
+
+      console.log('Added beneficiary:', transformedBeneficiary);
+      return transformedBeneficiary;
+    } catch (error) {
+      console.error('Error in addBeneficiary:', error);
+      return null;
+    }
+  },
+
+  async getBeneficiaries(legacyPlanId: string): Promise<Beneficiary[]> {
+    try {
+      const { data, error } = await supabase
+        .from('beneficiaries')
+        .select('*')
+        .eq('legacy_plan_id', legacyPlanId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching beneficiaries:', error);
+        return [];
+      }
+
+      // Transform database format to component format
+      const transformedBeneficiaries: Beneficiary[] = (data || []).map(beneficiary => ({
+        id: beneficiary.id,
+        name: beneficiary.name,
+        address: beneficiary.wallet_address,
+        percentage: Number(beneficiary.percentage),
+        notes: beneficiary.notes || '',
+      }));
+
+      return transformedBeneficiaries;
+    } catch (error) {
+      console.error('Error in getBeneficiaries:', error);
+      return [];
+    }
+  },
+
+  async deleteBeneficiary(beneficiaryId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('beneficiaries')
+        .delete()
+        .eq('id', beneficiaryId);
+
+      if (error) {
+        console.error('Error deleting beneficiary:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in deleteBeneficiary:', error);
+      return false;
     }
   }
 };

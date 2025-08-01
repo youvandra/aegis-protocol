@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { Shield, Clock } from 'lucide-react';
 import AestheticNavbar from '../components/AestheticNavbar';
@@ -8,25 +8,111 @@ import SetMomentModal from '../components/SetMomentModal';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
 import { useWalletTracking } from '../hooks/useWalletTracking';
+import { legacyService } from '../lib/supabase';
 
 const LegacyPage: React.FC = () => {
-  const { isConnected } = useWalletTracking();
+  const { isConnected, address } = useWalletTracking();
   const { open } = useWeb3Modal();
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [legacyMoment, setLegacyMoment] = useState<LegacyMoment | null>(null);
   const [showSetMomentModal, setShowSetMomentModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [legacyPlanId, setLegacyPlanId] = useState<string | null>(null);
 
-  const handleAddBeneficiary = (beneficiaryData: Omit<Beneficiary, 'id'>) => {
-    const newBeneficiary: Beneficiary = {
-      ...beneficiaryData,
-      id: Date.now().toString(), // Simple ID generation
-    };
-    setBeneficiaries(prev => [...prev, newBeneficiary]);
+  // Load legacy plan and beneficiaries when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      loadLegacyData();
+    } else {
+      // Reset data when wallet disconnects
+      setBeneficiaries([]);
+      setLegacyMoment(null);
+      setLegacyPlanId(null);
+    }
+  }, [isConnected, address]);
+
+  const loadLegacyData = async () => {
+    if (!address) return;
+    
+    setLoading(true);
+    try {
+      console.log('Loading legacy data for wallet:', address);
+      
+      // Load legacy plan
+      const legacyPlan = await legacyService.getLegacyPlan(address);
+      if (legacyPlan) {
+        setLegacyPlanId(legacyPlan.id);
+        setLegacyMoment({
+          type: legacyPlan.moment_type,
+          value: legacyPlan.moment_value,
+          label: legacyPlan.moment_label,
+        });
+        
+        // Load beneficiaries for this plan
+        const beneficiariesData = await legacyService.getBeneficiaries(legacyPlan.id);
+        setBeneficiaries(beneficiariesData);
+      }
+    } catch (error) {
+      console.error('Error loading legacy data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSetMomentSubmit = (momentConfig: LegacyMoment) => {
-    setLegacyMoment(momentConfig);
-    setShowSetMomentModal(false);
+  const handleAddBeneficiary = async (beneficiaryData: Omit<Beneficiary, 'id'>) => {
+    if (!address) return;
+    
+    try {
+      let currentLegacyPlanId = legacyPlanId;
+      
+      // If no legacy plan exists, create a default one
+      if (!currentLegacyPlanId) {
+        const defaultMoment: LegacyMoment = {
+          type: 'ifImGone',
+          value: '6months',
+          label: 'Activate if inactive for 6 months'
+        };
+        
+        const newPlan = await legacyService.createOrUpdateLegacyPlan(address, defaultMoment);
+        if (!newPlan) {
+          alert('Failed to create legacy plan. Please try again.');
+          return;
+        }
+        
+        currentLegacyPlanId = newPlan.id;
+        setLegacyPlanId(currentLegacyPlanId);
+        setLegacyMoment(defaultMoment);
+      }
+      
+      // Add beneficiary to the plan
+      const newBeneficiary = await legacyService.addBeneficiary(currentLegacyPlanId, beneficiaryData);
+      if (newBeneficiary) {
+        setBeneficiaries(prev => [...prev, newBeneficiary]);
+      } else {
+        alert('Failed to add beneficiary. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding beneficiary:', error);
+      alert('Failed to add beneficiary. Please try again.');
+    }
+  };
+
+  const handleSetMomentSubmit = async (momentConfig: LegacyMoment) => {
+    if (!address) return;
+    
+    try {
+      const updatedPlan = await legacyService.createOrUpdateLegacyPlan(address, momentConfig);
+      if (updatedPlan) {
+        setLegacyMoment(momentConfig);
+        setLegacyPlanId(updatedPlan.id);
+        setShowSetMomentModal(false);
+      } else {
+        alert('Failed to set moment. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error setting moment:', error);
+      alert('Failed to set moment. Please try again.');
+    }
   };
 
   const handleCloseSetMomentModal = () => {
@@ -90,7 +176,10 @@ const LegacyPage: React.FC = () => {
             <div className="flex flex-col md:flex-row md:gap-8 gap-6">
               {/* Left Side - Set Beneficiaries Form */}
               <div className="w-full md:w-1/2">
-                <SetBeneficiariesForm onAddBeneficiary={handleAddBeneficiary} />
+                <SetBeneficiariesForm 
+                  onAddBeneficiary={handleAddBeneficiary}
+                  loading={loading}
+                />
               </div>
               
               {/* Right Side - Beneficiaries Display */}
@@ -98,6 +187,7 @@ const LegacyPage: React.FC = () => {
                 <BeneficiariesDisplay 
                   beneficiaries={beneficiaries} 
                   legacyMoment={legacyMoment}
+                  loading={loading}
                 />
               </div>
             </div>

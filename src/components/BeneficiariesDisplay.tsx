@@ -6,11 +6,13 @@ import { LegacyMoment } from '../types/legacyMoment';
 interface BeneficiariesDisplayProps {
   beneficiaries: Beneficiary[];
   legacyMoment?: LegacyMoment | null;
+  loading?: boolean;
 }
 
 const BeneficiariesDisplay: React.FC<BeneficiariesDisplayProps> = ({ 
   beneficiaries, 
-  legacyMoment 
+  legacyMoment,
+  loading = false
 }) => {
   const totalPercentage = beneficiaries.reduce((sum, beneficiary) => sum + beneficiary.percentage, 0);
   const isComplete = totalPercentage === 100;
@@ -103,7 +105,12 @@ const BeneficiariesDisplay: React.FC<BeneficiariesDisplayProps> = ({
 
       {/* Beneficiaries List */}
       <div className="space-y-4">
-        {beneficiaries.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mx-auto mb-3"></div>
+            <p className="text-sm text-gray-500">Loading beneficiaries...</p>
+          </div>
+        ) : beneficiaries.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className="text-sm">No beneficiaries added yet</p>

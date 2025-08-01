@@ -4,9 +4,13 @@ import { Beneficiary } from '../types/beneficiary';
 
 interface SetBeneficiariesFormProps {
   onAddBeneficiary: (beneficiary: Omit<Beneficiary, 'id'>) => void;
+  loading?: boolean;
 }
 
-const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({ onAddBeneficiary }) => {
+const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({ 
+  onAddBeneficiary, 
+  loading = false 
+}) => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [percentage, setPercentage] = useState('');
@@ -117,10 +121,20 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({ onAddBenefi
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
+          disabled={loading}
+          className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
         >
-          <Plus className="w-5 h-5" />
-          <span>Add Beneficiary</span>
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span>Adding...</span>
+            </>
+          ) : (
+            <>
+              <Plus className="w-5 h-5" />
+              <span>Add Beneficiary</span>
+            </>
+          )}
         </button>
       </form>
     </div>
