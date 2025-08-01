@@ -12,23 +12,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Set up auth context for wallet-based authentication
-export const setWalletAuthContext = (walletAddress: string) => {
-  // Set the wallet address in the auth context for RLS policies
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (!session) {
-      // Create a custom JWT claim for wallet address
-      const customClaims = {
-        wallet_address: walletAddress.toLowerCase()
-      };
-      
-      // Set the custom claims in the request context
-      supabase.rest.headers = {
-        ...supabase.rest.headers,
-        'X-Wallet-Address': walletAddress.toLowerCase()
-      };
-    }
-  });
+// Set wallet address in headers for RLS policies
+export const setWalletContext = (walletAddress: string) => {
+  supabase.rest.headers = {
+    ...supabase.rest.headers,
+    'X-Wallet-Address': walletAddress.toLowerCase()
+  };
+};
+
+// Clear wallet context
+export const clearWalletContext = () => {
+  const { 'X-Wallet-Address': removed, ...restHeaders } = supabase.rest.headers;
+  supabase.rest.headers = restHeaders;
 };
 
 // User interface for the database
@@ -48,6 +43,9 @@ export interface User {
 export const walletAccountService = {
   async upsertWalletAccount(walletAddress: string, chainId?: number): Promise<User | null> {
     try {
+      // Set wallet context for RLS
+      setWalletContext(walletAddress);
+      
       // First, try to get existing user
       const { data: existingUser, error: fetchError } = await supabase
         .from('users')
@@ -113,6 +111,8 @@ export const walletAccountService = {
 
   async getWalletAccount(walletAddress: string): Promise<User | null> {
     try {
+      setWalletContext(walletAddress);
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -156,6 +156,8 @@ export const walletAccountService = {
 
   async setUserInactive(walletAddress: string): Promise<boolean> {
     try {
+      setWalletContext(walletAddress);
+      
       const { error } = await supabase
         .from('users')
         .update({ is_active: false })
@@ -183,10 +185,8 @@ export const streamService = {
     releaseDate?: string
   ): Promise<Group | null> {
     try {
-      // Set wallet address in headers for RLS
-      const headers = {
-        'X-Wallet-Address': walletAddress.toLowerCase()
-      };
+      // Set wallet context for RLS
+      setWalletContext(walletAddress);
       
       const { data, error } = await supabase
         .from('groups')
@@ -225,6 +225,7 @@ export const streamService = {
 
   async getGroups(walletAddress: string): Promise<Group[]> {
     try {
+      setWalletContext(walletAddress);
       console.log('Fetching groups for wallet:', walletAddress);
       
       const { data: groupsData, error: groupsError } = await supabase
@@ -284,6 +285,21 @@ export const streamService = {
     amount: number
   ): Promise<Member | null> {
     try {
+      // Set wallet context for RLS (using the group owner's wallet)
+      // First get the group to find the owner's wallet
+      const { data: groupData, error: groupError } = await supabase
+        .from('groups')
+        .select('wallet_address')
+        .eq('id', groupId)
+        .single();
+      
+      if (groupError || !groupData) {
+        console.error('Error fetching group for member addition:', groupError);
+        return null;
+      }
+      
+      setWalletContext(groupData.wallet_address);
+      
       // Validate inputs
       if (!groupId || !name || !memberWalletAddress || !amount) {
         console.error('Missing required parameters:', { groupId, name, memberWalletAddress, amount });
@@ -337,6 +353,7 @@ export const legacyService = {
     momentConfig: LegacyMoment
   ): Promise<LegacyPlan | null> {
     try {
+      setWalletContext(walletAddress);
       console.log('Creating/updating legacy plan:', { walletAddress, momentConfig });
       
       // First, check if a legacy plan already exists for this wallet
@@ -402,6 +419,8 @@ export const legacyService = {
 
   async getLegacyPlan(walletAddress: string): Promise<LegacyPlan | null> {
     try {
+      setWalletContext(walletAddress);
+      
       const { data, error } = await supabase
         .from('legacy_plans')
         .select('*')
@@ -430,6 +449,19 @@ export const legacyService = {
     beneficiaryData: Omit<Beneficiary, 'id'>
   ): Promise<Beneficiary | null> {
     try {
+      // Get the legacy plan to find the owner's wallet
+      const { data: legacyPlan, error: planError } = await supabase
+        .from('legacy_plans')
+        .select('wallet_address')
+        .eq('id', legacyPlanId)
+        .single();
+      
+      if (planError || !legacyPlan) {
+        console.error('Error fetching legacy plan for beneficiary addition:', planError);
+        return null;
+      }
+      
+      setWalletContext(legacyPlan.wallet_address);
       console.log('Adding beneficiary:', { legacyPlanId, beneficiaryData });
       
       const { data, error } = await supabase
@@ -468,6 +500,20 @@ export const legacyService = {
 
   async getBeneficiaries(legacyPlanId: string): Promise<Beneficiary[]> {
     try {
+      // Get the legacy plan to find the owner's wallet
+      const { data: legacyPlan, error: planError } = await supabase
+        .from('legacy_plans')
+        .select('wallet_address')
+        .eq('id', legacyPlanId)
+        .single();
+      
+      if (planError || !legacyPlan) {
+        console.error('Error fetching legacy plan for beneficiaries:', planError);
+        return [];
+      }
+      
+      setWalletContext(legacyPlan.wallet_address);
+      
       const { data, error } = await supabase
         .from('beneficiaries')
         .select('*')
@@ -497,6 +543,23 @@ export const legacyService = {
 
   async deleteBeneficiary(beneficiaryId: string): Promise<boolean> {
     try {
+      // Get the beneficiary to find the legacy plan and owner's wallet
+      const { data: beneficiary, error: beneficiaryError } = await supabase
+        .from('beneficiaries')
+        .select(`
+          legacy_plan_id,
+          legacy_plans!inner(wallet_address)
+        `)
+        .eq('id', beneficiaryId)
+        .single();
+      
+      if (beneficiaryError || !beneficiary) {
+        console.error('Error fetching beneficiary for deletion:', beneficiaryError);
+        return false;
+      }
+      
+      setWalletContext(beneficiary.legacy_plans.wallet_address);
+      
       const { error } = await supabase
         .from('beneficiaries')
         .delete()

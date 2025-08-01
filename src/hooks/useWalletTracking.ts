@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useAccount, useChainId } from 'wagmi';
-import { walletAccountService } from '../lib/supabase';
+import { walletAccountService, setWalletContext, clearWalletContext } from '../lib/supabase';
 
 export const useWalletTracking = () => {
   const { address, isConnected } = useAccount();
@@ -9,6 +9,8 @@ export const useWalletTracking = () => {
   useEffect(() => {
     const handleWalletConnection = async () => {
       if (isConnected && address) {
+        // Set wallet context for all subsequent requests
+        setWalletContext(address);
         console.log('Wallet connected:', address);
         
         // Automatically create/update user in Supabase
@@ -34,12 +36,17 @@ export const useWalletTracking = () => {
   useEffect(() => {
     const handleWalletDisconnection = async () => {
       if (!isConnected && address) {
+        setWalletContext(address);
         try {
           await walletAccountService.setUserInactive(address);
           console.log('User set to inactive:', address);
         } catch (error) {
           console.error('Failed to set user inactive:', error);
+        } finally {
+          clearWalletContext();
         }
+      } else if (!isConnected) {
+        clearWalletContext();
       }
     };
 
