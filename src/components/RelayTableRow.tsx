@@ -61,7 +61,9 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
   const formatExpirationTime = (expiresAt?: string) => {
     if (!expiresAt) return 'No expiration';
     
-    const expirationDate = new Date(expiresAt);
+    // Parse the stored time as if it's in the user's local timezone
+    // The stored format is "YYYY-MM-DDTHH:mm:ss" which we treat as local time
+    const expirationDate = new Date(expiresAt + (expiresAt.includes('T') && !expiresAt.includes('Z') ? '' : ''));
     const now = new Date();
     
     if (expirationDate <= now) {

@@ -85,19 +85,9 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
       // Convert expiration time to preserve user's timezone
       let expirationTimestamp = undefined;
       if (hasExpiration && expiresAt) {
-        // Create date object that preserves the user's intended local time
-        const localDate = new Date(expiresAt);
-        // Convert to ISO string but preserve the local time as if it were UTC
-        // This prevents the automatic UTC conversion
-        const year = localDate.getFullYear();
-        const month = String(localDate.getMonth() + 1).padStart(2, '0');
-        const day = String(localDate.getDate()).padStart(2, '0');
-        const hours = String(localDate.getHours()).padStart(2, '0');
-        const minutes = String(localDate.getMinutes()).padStart(2, '0');
-        const seconds = String(localDate.getSeconds()).padStart(2, '0');
-        
-        // Format as ISO string but treat as user's local time
-        expirationTimestamp = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        // Store the datetime exactly as entered by user (their local time)
+        // Add seconds to make it a complete timestamp
+        expirationTimestamp = `${expiresAt}:00`;
       }
 
       onSubmit(
