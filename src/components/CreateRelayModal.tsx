@@ -31,11 +31,14 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
       return true;
     }
 
-    // Convert the input datetime to UTC for comparison
+    // The datetime-local input gives us a local time string like "2025-08-01T12:00"
+    // We need to create a Date object that treats this as the user's local time
     const inputDate = new Date(dateTimeValue);
     const nowUTC = new Date();
     
-    if (inputDate <= nowUTC) {
+    // Convert input local time to UTC for comparison
+    // inputDate is already in user's timezone, so we compare directly with UTC now
+    if (inputDate.getTime() <= nowUTC.getTime()) {
       setExpirationError('Expiration time must be in the future (UTC timezone)');
       return false;
     }
@@ -217,9 +220,10 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
                   <span className="text-sm font-medium text-blue-900">Timezone Information</span>
                 </div>
                 <div className="text-xs text-blue-800 space-y-1">
-                  <p>• Current UTC time: {new Date().toISOString().slice(0, 16).replace('T', ' ')}</p>
+                  <p>• Current UTC time: {new Date().toISOString().slice(0, 19).replace('T', ' ')}</p>
                   <p>• Your local time: {new Date().toLocaleString()}</p>
-                  <p>• Input time will be treated as UTC+0</p>
+                  <p>• Input time will be treated as your local time</p>
+                  <p>• Example: Enter 12:00 = 12:00 in your timezone</p>
                 </div>
               </div>
               
