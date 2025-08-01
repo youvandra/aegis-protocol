@@ -163,6 +163,33 @@ const StreamPage: React.FC = () => {
     }
   };
 
+  const handleReleaseGroup = async (groupId: string) => {
+    if (!address) return;
+    
+    try {
+      console.log('Releasing group:', groupId);
+      const releasedGroup = await streamService.releaseGroup(groupId, address);
+      
+      if (releasedGroup) {
+        console.log('Group released successfully:', releasedGroup);
+        await loadGroups();
+        setToastMessage('Group released successfully!');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        console.error('Failed to release group');
+        setToastMessage('Failed to release group. Please try again.');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error releasing group:', error);
+      setToastMessage('Failed to release group. Please try again.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
   return (
     <div className="min-h-screen relative flex flex-col bg-[#F8F8F8]">
       <AestheticNavbar 
@@ -251,6 +278,7 @@ const StreamPage: React.FC = () => {
                   <StreamTable 
                     data={activeTab === 'upcoming' ? upcomingGroups : releasedGroups} 
                     onDeleteGroup={handleDeleteGroup}
+                    onReleaseGroup={handleReleaseGroup}
                   />
                 )}
               </div>

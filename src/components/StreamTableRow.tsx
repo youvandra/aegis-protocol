@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Calendar, Repeat, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Calendar, Repeat, Trash2, Play } from 'lucide-react';
 import { Group } from '../types/stream';
 
 interface StreamTableRowProps {
   group: Group;
   onDeleteGroup?: (groupId: string) => void;
+  onReleaseGroup?: (groupId: string) => void;
 }
 
-const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup }) => {
+const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, onReleaseGroup }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getStatusColor = (status: string) => {
@@ -40,6 +41,14 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup })
     
     if (window.confirm(`Are you sure you want to delete the group "${group.group_name}"? This action cannot be undone and will remove all members from this group.`)) {
       onDeleteGroup?.(group.id);
+    }
+  };
+
+  const handleReleaseGroup = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row expansion when clicking release
+    
+    if (window.confirm(`Are you sure you want to release the group "${group.group_name}" now? This will immediately make the funds available to all members.`)) {
+      onReleaseGroup?.(group.id);
     }
   };
 
@@ -80,13 +89,24 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup })
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           {group.status === 'upcoming' && onDeleteGroup && (
-            <button
-              onClick={handleDeleteGroup}
-              className="text-gray-400 hover:text-red-600 transition-colors duration-200 p-1"
-              title="Delete group"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center space-x-2">
+              {onReleaseGroup && (
+                <button
+                  onClick={handleReleaseGroup}
+                  className="text-gray-400 hover:text-green-600 transition-colors duration-200 p-1"
+                  title="Release group now"
+                >
+                  <Play className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={handleDeleteGroup}
+                className="text-gray-400 hover:text-red-600 transition-colors duration-200 p-1"
+                title="Delete group"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </td>
       </tr>

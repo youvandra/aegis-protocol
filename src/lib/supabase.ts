@@ -354,6 +354,61 @@ export const streamService = {
       console.error('Error in deleteGroup:', error);
       return false;
     }
+  },
+
+  async releaseGroup(groupId: string, walletAddress: string): Promise<Group | null> {
+    try {
+      setWalletContext(walletAddress);
+      console.log('Releasing group:', { groupId, walletAddress });
+      
+      const { data, error } = await supabase
+        .from('groups')
+        .update({ 
+          status: 'released',
+          release_date: new Date().toISOString().split('T')[0] // Set release date to today
+        })
+        .eq('id', groupId)
+        .eq('status', 'upcoming') // Only allow releasing upcoming groups
+        .select(`
+          *,
+          members (*)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error releasing group:', error);
+        return null;
+      }
+
+      // Transform the data to match the Group interface
+      const transformedGroup: Group = {
+        id: data.id,
+        number: data.group_number,
+        group_number: data.group_number,
+        group_name: data.group_name,
+        release_date: data.release_date,
+        release_type: data.release_type,
+        total_members: data.total_members,
+        total_amount: data.total_amount,
+        wallet_address: data.wallet_address,
+        status: data.status,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        // Legacy interface compatibility
+        groupName: data.group_name,
+        releaseDate: data.release_date,
+        releaseType: data.release_type,
+        totalMembers: data.total_members,
+        totalAmount: data.total_amount,
+        members: Array.isArray(data.members) ? data.members : []
+      };
+
+      console.log('Released group:', transformedGroup);
+      return transformedGroup;
+    } catch (error) {
+      console.error('Error in releaseGroup:', error);
+      return null;
+    }
   }
 };
 

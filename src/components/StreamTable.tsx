@@ -5,9 +5,10 @@ import { Group } from '../types/stream';
 interface StreamTableProps {
   data: Group[];
   onDeleteGroup?: (groupId: string) => void;
+  onReleaseGroup?: (groupId: string) => void;
 }
 
-const StreamTable: React.FC<StreamTableProps> = ({ data, onDeleteGroup }) => {
+const StreamTable: React.FC<StreamTableProps> = ({ data, onDeleteGroup, onReleaseGroup }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -47,6 +48,7 @@ const StreamTable: React.FC<StreamTableProps> = ({ data, onDeleteGroup }) => {
                   key={group.id} 
                   group={group} 
                   onDeleteGroup={onDeleteGroup}
+                  onReleaseGroup={onReleaseGroup}
                 />
               ))
             )}
