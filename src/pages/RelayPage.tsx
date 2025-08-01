@@ -235,6 +235,7 @@ const RelayPage: React.FC = () => {
                     data={activeTab === 'queue' ? queueRelays : historyRelays}
                     currentWallet={address || ''}
                     onRelayAction={handleRelayAction}
+                    itemsPerPage={10}
                   />
                 )}
               </div>
