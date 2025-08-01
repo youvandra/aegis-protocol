@@ -203,20 +203,6 @@ const CreateRelayModal: React.FC<CreateRelayModalProps> = ({ isOpen, onClose, on
                 Expires At (UTC Timezone)
               </label>
               
-              {/* UTC Time Info */}
-              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Clock className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Storage Information</span>
-                </div>
-                <div className="text-xs text-blue-800 space-y-1">
-                  <p>• Current UTC time: {new Date().toISOString().slice(0, 19).replace('T', ' ')}</p>
-                  <p>• Your local time: {new Date().toLocaleString()}</p>
-                  <p>• Input: Your local time → Stored: UTC equivalent</p>
-                  <p>• Example: Enter 19:00 (your time) → Stored: 12:00 UTC</p>
-                </div>
-              </div>
-              
               <input
                 type="datetime-local"
                 id="expiresAt"
