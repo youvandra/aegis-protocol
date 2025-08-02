@@ -142,7 +142,6 @@ const BeneficiariesDisplay: React.FC<BeneficiariesDisplayProps> = ({
                     )}
                     {onDeleteBeneficiary && (
                       <button
-                        onClick={() => onDeleteBeneficiary(beneficiary.id)}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
