@@ -7,7 +7,7 @@ interface HeaderProps {
   onWalletRequired?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ isConnected, onWalletRequired }) => {
+const Header: React.FC<HeaderProps> = ({  }) => {
   // Track wallet connections automatically
   useWalletTracking();
 
