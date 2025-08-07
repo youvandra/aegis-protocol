@@ -77,8 +77,6 @@ export const walletAccountService = {
           console.error('Error updating user:', updateError);
           return null;
         }
-
-        console.log('Updated existing user:', updatedUser);
         return updatedUser;
       } else {
         // Create new user
@@ -219,7 +217,6 @@ export const streamService = {
   async getGroups(walletAddress: string): Promise<Group[]> {
     try {
       setWalletContext(walletAddress);
-      console.log('Fetching groups for wallet:', walletAddress);
       
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
@@ -462,7 +459,6 @@ export const relayService = {
   async getRelays(walletAddress: string): Promise<Relay[]> {
     try {
       setWalletContext(walletAddress);
-      console.log('Fetching relays for wallet:', walletAddress);
       
       // First, expire any old relays
       await this.expireOldRelays();
@@ -477,8 +473,6 @@ export const relayService = {
         console.error('Error fetching relays:', error);
         return [];
       }
-
-      console.log('Fetched relays:', data);
       return data || [];
     } catch (error) {
       console.error('Error in getRelays:', error);

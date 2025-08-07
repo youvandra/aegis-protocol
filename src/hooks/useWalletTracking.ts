@@ -1,36 +1,49 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import { walletAccountService, setWalletContext, clearWalletContext } from '../lib/supabase';
+import { AccountId, AccountInfoQuery, Client, PrivateKey } from '@hashgraph/sdk';
 
 export const useWalletTracking = () => {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-
+  const [hederaAccountId, setHederaAccountId] = useState<string | null>(null);
   useEffect(() => {
     const handleWalletConnection = async () => {
       if (isConnected && address) {
-        // Set wallet context for all subsequent requests
-        setWalletContext(address);
-        console.log('Wallet connected:', address);
+        const MY_ACCOUNT_ID = AccountId.fromString("0.0.6496404");
+            const MY_PRIVATE_KEY = PrivateKey.fromStringECDSA(
+              "cd6b997c0df744d9740ef249d5643a532ad7a58450b7135b719126bb80c2a1be"
+            );
         
-        // Automatically create/update user in Supabase
-        try {
-          const user = await walletAccountService.upsertWalletAccount(address, chainId);
-          if (user) {
-            console.log('User data saved to Supabase:', {
-              address: user.wallet_address,
-              connectionCount: user.connection_count,
-              isNewUser: user.connection_count === 1
-            });
-          }
-        } catch (error) {
-          console.error('Failed to save user data to Supabase:', error);
-        }
+            const client = Client.forTestnet().setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
+        
+            try {
+              // Convert EVM → Hedera AccountId instance
+              const accountIdFromEvm = AccountId.fromEvmAddress(0, 0, address);
+        
+              // Query pakai Hedera AccountId (bukan string address langsung)
+              const info = await new AccountInfoQuery()
+                .setAccountId(accountIdFromEvm)
+                .execute(client);
+
+              const hederaAddress = info.accountId.toString();
+              setHederaAccountId(hederaAddress); // Ini udah "0.0.num"
+              setWalletContext(hederaAddress);
+                 try {
+                    const user = await walletAccountService.upsertWalletAccount(hederaAddress, chainId);
+                    if (user) {
+                    }
+                  } catch (error) {
+                    console.error('Failed to save user data to Supabase:', error);
+                  }
+            } catch (err) {
+              console.error("Failed to resolve Hedera account ID:", err);
+            }
       }
     };
 
     handleWalletConnection();
-  }, [isConnected, address, chainId]);
+  }, [isConnected, hederaAccountId, chainId]);
 
   // Handle wallet disconnection
   useEffect(() => {
@@ -39,7 +52,6 @@ export const useWalletTracking = () => {
         setWalletContext(address);
         try {
           await walletAccountService.setUserInactive(address);
-          console.log('User set to inactive:', address);
         } catch (error) {
           console.error('Failed to set user inactive:', error);
         } finally {
@@ -57,6 +69,6 @@ export const useWalletTracking = () => {
 
   return {
     isConnected,
-    address
+    hederaAccountId
   };
 };

@@ -16,7 +16,7 @@ import { legacyService, walletAccountService } from '../lib/supabase';
 import { formatDuration } from '../utils/time';
 
 const LegacyPage: React.FC = () => {
-  const { isConnected, address } = useWalletTracking();
+  const { isConnected, hederaAccountId } = useWalletTracking();
   const chainId = useChainId();
   const { open } = useWeb3Modal();
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
@@ -43,7 +43,7 @@ const LegacyPage: React.FC = () => {
 
   // Load legacy plan and beneficiaries when wallet connects
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && hederaAccountId) {
       loadLegacyData();
     } else {
       // Reset data when wallet disconnects
@@ -51,7 +51,7 @@ const LegacyPage: React.FC = () => {
       setLegacyMoment(null);
       setLegacyPlanId(null);
     }
-  }, [isConnected, address]);
+  }, [isConnected, hederaAccountId]);
 
   // Auto-hide toast after 3 seconds
   useEffect(() => {
@@ -84,14 +84,13 @@ const LegacyPage: React.FC = () => {
   }, [lastConnectedAt]);
 
   const loadLegacyData = async () => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     setLoading(true);
     try {
-      console.log('Loading legacy data for wallet:', address);
       
       // Load legacy plan
-      const legacyPlan = await legacyService.getLegacyPlan(address);
+      const legacyPlan = await legacyService.getLegacyPlan(hederaAccountId);
       if (legacyPlan) {
         setLegacyPlanId(legacyPlan.id);
         setLegacyMoment({
@@ -106,7 +105,7 @@ const LegacyPage: React.FC = () => {
       }
 
       // Load user's last connected timestamp
-      const userData = await walletAccountService.getWalletAccount(address);
+      const userData = await walletAccountService.getWalletAccount(hederaAccountId);
       if (userData) {
         setLastConnectedAt(userData.last_connected_at);
       }
@@ -118,7 +117,7 @@ const LegacyPage: React.FC = () => {
   };
 
   const handleAddBeneficiary = async (beneficiaryData: Omit<Beneficiary, 'id'>) => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     // Check if adding this beneficiary would exceed 100%
     const currentTotal = beneficiaries.reduce((sum, b) => sum + b.percentage, 0);
@@ -143,7 +142,7 @@ const LegacyPage: React.FC = () => {
           label: 'Activate if inactive for 6 months'
         };
         
-        const newPlan = await legacyService.createOrUpdateLegacyPlan(address, defaultMoment);
+        const newPlan = await legacyService.createOrUpdateLegacyPlan(hederaAccountId, defaultMoment);
         if (!newPlan) {
           setToastMessage('Failed to create legacy plan. Please try again.');
           setToastType('error');
@@ -184,10 +183,10 @@ const LegacyPage: React.FC = () => {
   };
 
   const confirmSetMoment = async () => {
-    if (!address || !pendingMomentConfig) return;
+    if (!hederaAccountId || !pendingMomentConfig) return;
     
     try {
-      const updatedPlan = await legacyService.createOrUpdateLegacyPlan(address, pendingMomentConfig);
+      const updatedPlan = await legacyService.createOrUpdateLegacyPlan(hederaAccountId, pendingMomentConfig);
       if (updatedPlan) {
         setLegacyMoment(pendingMomentConfig);
         setLegacyPlanId(updatedPlan.id);
@@ -229,7 +228,7 @@ const LegacyPage: React.FC = () => {
   };
 
   const handleUpdateBeneficiary = async (beneficiaryId: string, beneficiaryData: Omit<Beneficiary, 'id'>) => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     try {
       const updatedBeneficiary = await legacyService.updateBeneficiary(beneficiaryId, beneficiaryData);
@@ -255,7 +254,7 @@ const LegacyPage: React.FC = () => {
   };
 
   const handleDeleteBeneficiary = async (beneficiaryId: string) => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     // Store the beneficiary ID and show confirmation dialog
     setPendingDeleteBeneficiaryId(beneficiaryId);
@@ -263,7 +262,7 @@ const LegacyPage: React.FC = () => {
   };
 
   const confirmDeleteBeneficiary = async () => {
-    if (!address || !pendingDeleteBeneficiaryId) return;
+    if (!hederaAccountId || !pendingDeleteBeneficiaryId) return;
     
     try {
       const success = await legacyService.deleteBeneficiary(pendingDeleteBeneficiaryId);
@@ -297,12 +296,11 @@ const LegacyPage: React.FC = () => {
   };
 
   const confirmHeartbeat = async () => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     setHeartbeatLoading(true);
     try {
-      console.log('Refreshing heartbeat for wallet:', address);
-      const updatedUser = await walletAccountService.upsertWalletAccount(address, chainId);
+      const updatedUser = await walletAccountService.upsertWalletAccount(hederaAccountId, chainId);
       
       if (updatedUser) {
         setLastConnectedAt(updatedUser.last_connected_at);

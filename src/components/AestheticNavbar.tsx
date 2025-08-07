@@ -1,98 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { DoorOpen } from 'lucide-react';
-import { HashConnect } from 'hashconnect';
-import { AccountBalanceQuery, Client } from '@hashgraph/sdk';
-
-// --- Custom Hook for Hedera Wallet Logic ---
-// This hook replaces wagmi's useAccount, useDisconnect, useBalance, etc.
-const useHederaWallet = () => {
-  const [accountId, setAccountId] = useState<string | null>(null);
-  const [balance, setBalance] = useState<string | null>(null);
-  const [hashConnect, setHashConnect] = useState<HashConnect | null>(null);
-  const [pairingData, setPairingData] = useState<any>(null);
-
-  const isConnected = !!accountId;
-
-  // Initialize HashConnect
-  const initHashConnect = useCallback(async () => {
-    // 1. Create a new HashConnect instance
-    const hc = new HashConnect(true); // Enable debug mode
-
-    // 2. Define app metadata
-    const appMetadata = {
-      name: "Your dApp Name",
-      description: "A description of your dApp",
-      icon: "https://absolute.url/to/your/icon.png",
-    };
-
-    // 3. Initialize and get pairing data
-    const initData = await hc.init(appMetadata, "testnet", false);
-    setPairingData(initData.pairingData);
-    setHashConnect(hc);
-
-    // 4. Register event handlers
-    hc.pairingEvent.on((data) => {
-      if (data.accountIds && data.accountIds.length > 0) {
-        setAccountId(data.accountIds[0]);
-      }
-    });
-
-    hc.connectionStatusChangeEvent.on((status) => {
-      if (status === "Disconnected") {
-        setAccountId(null);
-        setBalance(null);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    initHashConnect();
-  }, [initHashConnect]);
-
-  // Function to fetch account balance
-  const fetchBalance = useCallback(async (id: string) => {
-    if (!id) return;
-    try {
-      const client = Client.forTestnet(); // Or Client.forMainnet()
-      const query = new AccountBalanceQuery().setAccountId(id);
-      const accountBalance = await query.execute(client);
-      // Format the balance to 2 decimal places and add the HBAR symbol
-      setBalance(`${accountBalance.hbars.toBigNumber().toFixed(2)} ℏ`);
-    } catch (error) {
-      console.error("Failed to fetch balance:", error);
-      setBalance(null);
-    }
-  }, []);
-
-  // Effect to fetch balance when accountId is available
-  useEffect(() => {
-    if (accountId) {
-      fetchBalance(accountId);
-    }
-  }, [accountId, fetchBalance]);
-
-  // Connect function
-  const connect = () => {
-    if (hashConnect && pairingData) {
-      // This will open the HashPack extension to prompt for connection
-      hashConnect.connectToLocalWallet();
-    } else {
-      console.error("HashConnect not initialized.");
-    }
-  };
-
-  // Disconnect function
-  const disconnect = () => {
-    if (hashConnect && pairingData) {
-      hashConnect.disconnect(pairingData.topic);
-    }
-  };
-
-  return { accountId, isConnected, balance, connect, disconnect };
-};
-
-// --- Refactored Navbar Component ---
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAccount, useDisconnect, useBalance } from "wagmi";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
+import { DoorOpen } from "lucide-react";
+import { useWalletTracking } from "../hooks/useWalletTracking";
+import { AccountId, AccountInfoQuery, Client, PrivateKey } from "@hashgraph/sdk";
 
 interface AestheticNavbarProps {
   leftLinkPath: string;
@@ -109,13 +21,53 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
   rightLinkPath,
   rightLinkText,
 }) => {
-  // Use the new Hedera hook
-  const { accountId, isConnected, balance, connect, disconnect } = useHederaWallet();
+  const { address } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { open } = useWeb3Modal();
+  const { isConnected } = useWalletTracking();
+  const { data: balance } = useBalance({ address });
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [hederaAccountId, setHederaAccountId] = useState<string | null>(null);
+
+  // Resolve EVM → Hedera Account ID
+useEffect(() => {
+  const fetchAccountInfo = async () => {
+    if (!address) {
+      setHederaAccountId(null);
+      return;
+    }
+
+    const MY_ACCOUNT_ID = AccountId.fromString("0.0.6496404");
+    const MY_PRIVATE_KEY = PrivateKey.fromStringECDSA(
+      "cd6b997c0df744d9740ef249d5643a532ad7a58450b7135b719126bb80c2a1be"
+    );
+
+    const client = Client.forTestnet().setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
+
+    try {
+      // Convert EVM → Hedera AccountId instance
+      const accountIdFromEvm = AccountId.fromEvmAddress(0, 0, address);
+
+      // Query pakai Hedera AccountId (bukan string address langsung)
+      const info = await new AccountInfoQuery()
+        .setAccountId(accountIdFromEvm)
+        .execute(client);
+
+      setHederaAccountId(info.accountId.toString()); // Ini udah "0.0.num"
+    } catch (err) {
+      console.error("Failed to resolve Hedera account ID:", err);
+      setHederaAccountId(null);
+    }
+  };
+
+  fetchAccountInfo();
+}, [address]);
+
 
   return (
     <nav className="w-full py-8 px-8">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Homepage Button - Left Side */}
+        {/* Homepage Button */}
         <Link
           to="/"
           className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1 hover:bg-white/95 transition-all duration-200"
@@ -124,10 +76,9 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
             Homepage
           </span>
         </Link>
-        
-        {/* Centered Navigation Group */}
+
+        {/* Center Navigation */}
         <div className="hidden md:flex items-center">
-          {/* Left Navigation */}
           <Link
             to={leftLinkPath}
             className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200 mr-8"
@@ -136,13 +87,11 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
             <span className="text-base font-medium">{leftLinkText}</span>
           </Link>
 
-          {/* Room Name */}
           <div className="text-4xl font-bold text-black">
             <DoorOpen className="inline-block mr-3" size={32} />
             <span>{roomName}</span>
           </div>
 
-          {/* Right Navigation */}
           <Link
             to={rightLinkPath}
             className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200 ml-8"
@@ -151,16 +100,16 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
             <span className="text-2xl">→</span>
           </Link>
         </div>
-        
-        {/* Mobile Navigation */}
+
+        {/* Mobile Nav */}
         <div className="md:hidden flex items-center justify-center flex-1">
           <div className="text-2xl font-bold text-black flex items-center">
             <DoorOpen className="mr-2" size={24} />
             <span>{roomName}</span>
           </div>
         </div>
-        
-        {/* Mobile Navigation Links */}
+
+        {/* Mobile Bottom Nav */}
         <div className="md:hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg">
           <Link
             to={leftLinkPath}
@@ -178,31 +127,59 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
             <span className="text-lg">→</span>
           </Link>
         </div>
-        
-        {/* Wallet Connection - Right Side */}
+
+        {/* Wallet Connection */}
         <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1 min-w-fit">
           {isConnected ? (
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 relative">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <button
-                onClick={disconnect} // Use Hedera disconnect
-                className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                  <span className="text-xs sm:text-sm text-gray-700 font-medium">
-                    {accountId} {/* Display Hedera Account ID */}
-                  </span>
-                  {balance && (
-                    <span className="text-xs text-gray-600 font-mono">
-                      {balance} {/* Display formatted HBAR balance */}
+              <div className="relative">
+                <button
+                  className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline px-2 py-1 rounded"
+                  onClick={() => setDropdownOpen((open) => !open)}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                    <span className="text-xs sm:text-sm text-gray-700 font-medium">
+                      {hederaAccountId
+                        ? `${hederaAccountId}`
+                        : `${address?.slice(0, 6)}...${address?.slice(-4)}`}
                     </span>
-                  )}
-                </div>
-              </button>
+                    {balance && (
+                      <span className="text-xs text-gray-600 font-mono">
+                        {parseFloat(balance.formatted).toFixed(4)} {balance.symbol}
+                      </span>
+                    )}
+                  </div>
+                </button>
+
+                {/* Dropdown */}
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-36 bg-white rounded shadow-lg border border-gray-200 z-10">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(hederaAccountId || address || "");
+                        setDropdownOpen(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                    >
+                      Copy Address
+                    </button>
+                    <button
+                      onClick={() => {
+                        disconnect();
+                        setDropdownOpen(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-100"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <button
-              onClick={connect} // Use Hedera connect
+              onClick={() => open()}
               className="text-xs sm:text-sm text-gray-700 hover:text-black transition-colors duration-200 font-medium"
             >
               Connect Wallet

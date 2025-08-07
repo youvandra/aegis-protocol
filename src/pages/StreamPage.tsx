@@ -11,7 +11,7 @@ import { useWalletTracking } from '../hooks/useWalletTracking';
 import { streamService } from '../lib/supabase';
 
 const StreamPage: React.FC = () => {
-  const { isConnected, address } = useWalletTracking();
+  const { isConnected, hederaAccountId } = useWalletTracking();
   const { open } = useWeb3Modal();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'released'>('upcoming');
   const [groups, setGroups] = useState<Group[]>([]);
@@ -36,7 +36,7 @@ const StreamPage: React.FC = () => {
     setLoading(true);
     try {
       console.log('Loading groups...');
-      const groupsData = await streamService.getGroups(address || '');
+      const groupsData = await streamService.getGroups(hederaAccountId || '');
       console.log('Loaded groups:', groupsData);
       setGroups(groupsData);
     } catch (error) {
@@ -49,7 +49,7 @@ const StreamPage: React.FC = () => {
 
   useEffect(() => {
     loadGroups();
-  }, [address]);
+  }, [hederaAccountId]);
 
   const upcomingGroups = groups.filter(group => group.status === 'upcoming');
   const releasedGroups = groups.filter(group => group.status === 'released');
@@ -58,13 +58,13 @@ const StreamPage: React.FC = () => {
     groupName: string;
     releaseDateTime?: string;
   }) => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     try {
       console.log('Creating group with data:', groupData);
       const newGroup = await streamService.createGroup(
         groupData.groupName,
-        address,
+        hederaAccountId,
         groupData.releaseDateTime!
       );
       
@@ -135,11 +135,11 @@ const StreamPage: React.FC = () => {
   };
 
   const handleDeleteGroup = async (groupId: string) => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     try {
       console.log('Deleting group:', groupId);
-      const success = await streamService.deleteGroup(groupId, address);
+      const success = await streamService.deleteGroup(groupId, hederaAccountId);
       
       if (success) {
         console.log('Group deleted successfully');
@@ -162,11 +162,11 @@ const StreamPage: React.FC = () => {
   };
 
   const handleReleaseGroup = async (groupId: string) => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     try {
       console.log('Releasing group:', groupId);
-      const releasedGroup = await streamService.releaseGroup(groupId, address);
+      const releasedGroup = await streamService.releaseGroup(groupId, hederaAccountId);
       
       if (releasedGroup) {
         console.log('Group released successfully:', releasedGroup);

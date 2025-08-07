@@ -11,7 +11,7 @@ import { useWalletTracking } from '../hooks/useWalletTracking';
 import { relayService } from '../lib/supabase';
 
 const RelayPage: React.FC = () => {
-  const { isConnected, address } = useWalletTracking();
+  const { isConnected, hederaAccountId } = useWalletTracking();
   const { open } = useWeb3Modal();
   const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
   const [showCreateRelayModal, setShowCreateRelayModal] = useState(false);
@@ -33,21 +33,19 @@ const RelayPage: React.FC = () => {
 
   // Load relays when wallet connects
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && hederaAccountId) {
       loadRelays();
     } else {
       setRelays([]);
     }
-  }, [isConnected, address]);
+  }, [isConnected, hederaAccountId]);
 
   const loadRelays = async () => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     setLoading(true);
     try {
-      console.log('Loading relays for wallet:', address);
-      const relaysData = await relayService.getRelays(address);
-      console.log('Loaded relays:', relaysData);
+      const relaysData = await relayService.getRelays(hederaAccountId);
       setRelays(relaysData);
     } catch (error) {
       console.error('Error loading relays:', error);
@@ -73,7 +71,7 @@ const RelayPage: React.FC = () => {
   };
 
   const handleCreateRelaySubmit = async (receiverAddress: string, amount: string, expiresAt?: string) => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     try {
       // Additional validation
@@ -87,7 +85,7 @@ const RelayPage: React.FC = () => {
 
       console.log('Creating relay:', { receiverAddress, amount, expiresAt });
       const newRelay = await relayService.createRelay(
-        address,
+        hederaAccountId,
         receiverAddress,
         numericAmount,
         expiresAt
@@ -115,25 +113,25 @@ const RelayPage: React.FC = () => {
   };
 
   const handleRelayAction = async (relayId: string, action: 'approve' | 'reject' | 'execute' | 'cancel') => {
-    if (!address) return;
+    if (!hederaAccountId) return;
     
     try {
       let result = null;
       
       switch (action) {
         case 'approve':
-          result = await relayService.approveRelay(relayId, address);
+          result = await relayService.approveRelay(relayId, hederaAccountId);
           break;
         case 'reject':
-          result = await relayService.rejectRelay(relayId, address);
+          result = await relayService.rejectRelay(relayId, hederaAccountId);
           break;
         case 'execute':
           // In a real implementation, this would trigger the actual blockchain transaction
           const mockTxHash = '0x' + Math.random().toString(16).substr(2, 40);
-          result = await relayService.executeRelay(relayId, address, mockTxHash, '21,000');
+          result = await relayService.executeRelay(relayId, hederaAccountId, mockTxHash, '21,000');
           break;
         case 'cancel':
-          result = await relayService.cancelRelay(relayId, address);
+          result = await relayService.cancelRelay(relayId, hederaAccountId);
           break;
       }
       
@@ -233,7 +231,7 @@ const RelayPage: React.FC = () => {
                 ) : (
                   <RelayTable 
                     data={activeTab === 'queue' ? queueRelays : historyRelays}
-                    currentWallet={address || ''}
+                    currentWallet={hederaAccountId || ''}
                     onRelayAction={handleRelayAction}
                     itemsPerPage={10}
                   />

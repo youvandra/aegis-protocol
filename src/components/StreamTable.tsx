@@ -29,16 +29,7 @@ const StreamTable: React.FC<StreamTableProps> = ({
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentData = data.slice(startIndex, endIndex);
-  
-  console.log('Stream pagination debug:', {
-    totalItems,
-    totalPages,
-    currentPage,
-    startIndex,
-    endIndex,
-    currentDataLength: currentData.length,
-    itemsPerPage
-  });
+
   
   const handlePageChange = (page: number) => {
     setCurrentPage(page);

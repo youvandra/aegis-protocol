@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, AlertTriangle, Clock } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 import { useAccount } from 'wagmi';
 
 interface CreateRelayModalProps {
