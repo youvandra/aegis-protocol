@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAccount, useDisconnect, useBalance } from "wagmi";
@@ -5,6 +6,14 @@ import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { DoorOpen } from "lucide-react";
 import { useWalletTracking } from "../hooks/useWalletTracking";
 import { AccountId, AccountInfoQuery, Client, PrivateKey } from "@hashgraph/sdk";
+=======
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAccount, useDisconnect, useBalance } from 'wagmi';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
+import { DoorOpen } from 'lucide-react';
+import { useWalletTracking } from '../hooks/useWalletTracking';
+>>>>>>> 7b2ef2df11dfc13beb6b83b8e3ea2c3ef17a5822
 
 interface AestheticNavbarProps {
   leftLinkPath: string;
@@ -13,6 +22,7 @@ interface AestheticNavbarProps {
   rightLinkPath: string;
   rightLinkText: string;
 }
+
 
 const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
   leftLinkPath,
@@ -25,6 +35,7 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
   const { disconnect } = useDisconnect();
   const { open } = useWeb3Modal();
   const { isConnected } = useWalletTracking();
+<<<<<<< HEAD
   const { data: balance } = useBalance({ address });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [hederaAccountId, setHederaAccountId] = useState<string | null>(null);
@@ -63,12 +74,23 @@ useEffect(() => {
   fetchAccountInfo();
 }, [address]);
 
+=======
+
+  const { data: balance } = useBalance({
+    address: address,
+  });
+>>>>>>> 7b2ef2df11dfc13beb6b83b8e3ea2c3ef17a5822
 
   return (
     <nav className="w-full py-8 px-8">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
+<<<<<<< HEAD
         {/* Homepage Button */}
         <Link
+=======
+        {/* Homepage Button - Left Side */}
+        <Link 
+>>>>>>> 7b2ef2df11dfc13beb6b83b8e3ea2c3ef17a5822
           to="/"
           className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1 hover:bg-white/95 transition-all duration-200"
         >
@@ -79,7 +101,12 @@ useEffect(() => {
 
         {/* Center Navigation */}
         <div className="hidden md:flex items-center">
+<<<<<<< HEAD
           <Link
+=======
+          {/* Left Navigation */}
+          <Link 
+>>>>>>> 7b2ef2df11dfc13beb6b83b8e3ea2c3ef17a5822
             to={leftLinkPath}
             className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200 mr-8"
           >
@@ -92,7 +119,12 @@ useEffect(() => {
             <span>{roomName}</span>
           </div>
 
+<<<<<<< HEAD
           <Link
+=======
+          {/* Right Navigation */}
+          <Link 
+>>>>>>> 7b2ef2df11dfc13beb6b83b8e3ea2c3ef17a5822
             to={rightLinkPath}
             className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200 ml-8"
           >
@@ -109,9 +141,13 @@ useEffect(() => {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* Mobile Bottom Nav */}
+=======
+        {/* Mobile Navigation Links */}
+>>>>>>> 7b2ef2df11dfc13beb6b83b8e3ea2c3ef17a5822
         <div className="md:hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg">
-          <Link
+          <Link 
             to={leftLinkPath}
             className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200"
           >
@@ -119,7 +155,7 @@ useEffect(() => {
             <span className="text-sm font-medium">{leftLinkText}</span>
           </Link>
           <div className="w-px h-4 bg-gray-300"></div>
-          <Link
+          <Link 
             to={rightLinkPath}
             className="flex items-center space-x-1 hover:opacity-70 transition-opacity duration-200"
           >
@@ -128,11 +164,16 @@ useEffect(() => {
           </Link>
         </div>
 
+<<<<<<< HEAD
         {/* Wallet Connection */}
+=======
+        {/* Wallet Connection - Right Side */}
+>>>>>>> 7b2ef2df11dfc13beb6b83b8e3ea2c3ef17a5822
         <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1 min-w-fit">
           {isConnected ? (
             <div className="flex items-center space-x-3 relative">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+<<<<<<< HEAD
               <div className="relative">
                 <button
                   className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline px-2 py-1 rounded"
@@ -176,6 +217,25 @@ useEffect(() => {
                   </div>
                 )}
               </div>
+=======
+              <button
+                onClick={() => disconnect()}
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline"
+              >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                
+                <span className="text-xs sm:text-sm text-gray-700 font-medium">
+                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                </span>
+                {balance && (
+                  <span className="text-xs text-gray-600 font-mono">
+                    {parseFloat(balance.formatted).toFixed(2)} {balance.symbol}
+                  </span>
+                )}
+              </div>
+              
+              </button>
+>>>>>>> 7b2ef2df11dfc13beb6b83b8e3ea2c3ef17a5822
             </div>
           ) : (
             <button
@@ -191,4 +251,8 @@ useEffect(() => {
   );
 };
 
+<<<<<<< HEAD
 export default AestheticNavbar;
+=======
+export default AestheticNavbar; 
+>>>>>>> 7b2ef2df11dfc13beb6b83b8e3ea2c3ef17a5822
