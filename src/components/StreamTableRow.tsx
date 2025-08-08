@@ -118,7 +118,7 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, o
           </button>
         </div>
         )}
-        {group.status === 'released' || group.scheduled === true && (
+        {(group.status === 'released' || group.scheduled === true) && (
         <div className="flex items-center space-x-2">
           
             <button
@@ -150,9 +150,14 @@ const StreamTableRow: React.FC<StreamTableRowProps> = ({ group, onDeleteGroup, o
         <div className="space-y-3">
           <h4 className="font-medium text-gray-900 mb-3">
             Members ({group.members.length})
-            {group.scheduled && (
+            {(group.scheduled && group.status === 'upcoming')&& (
               <span className="ml-2 px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded">
-                Scheduled
+              Scheduled
+              </span>
+            )}
+            {group.status === 'released' && (
+              <span className="ml-2 px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded">
+              Released
               </span>
             )}
           </h4>
