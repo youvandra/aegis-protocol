@@ -1,24 +1,23 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy } from 'react';
 import { Plus, Send } from 'lucide-react';
-import { useWeb3Modal } from '@web3modal/wagmi/react';
-import AestheticNavbar from '../components/AestheticNavbar';
-import RelayTable from '../components/RelayTable';
-import CreateRelayModal from '../components/CreateRelayModal';
-import Toast from '../components/Toast';
 import { RelayItem } from '../types/relay';
 import { useWalletTracking } from '../hooks/useWalletTracking';
 import { relayService } from '../lib/supabase';
-import { AccountId, Client, Hbar, PrivateKey, TopicCreateTransaction, TopicId, TopicMessageSubmitTransaction } from '@hashgraph/sdk';
+import { AccountId, Client, PrivateKey, TopicCreateTransaction, TopicId, TopicMessageSubmitTransaction } from '@hashgraph/sdk';
 import { parseEther } from 'viem';
 import { useSendTransaction } from 'wagmi';
+
+// Dynamic imports
+const AestheticNavbar = lazy(() => import('../components/AestheticNavbar'));
+const RelayTable = lazy(() => import('../components/RelayTable'));
+const CreateRelayModal = lazy(() => import('../components/CreateRelayModal'));
+const Toast = lazy(() => import('../components/Toast'));
 
 // Your account ID and private key from string value
 const MY_ACCOUNT_ID = AccountId.fromString(import.meta.env.VITE_HEDERA_ACCOUNT_ID!);
 const MY_PRIVATE_KEY = PrivateKey.fromStringECDSA(import.meta.env.VITE_HEDERA_PRIVATE_KEY!);
 const RelayPage: React.FC = () => {
   const { isConnected, hederaAccountId } = useWalletTracking();
-  const { open } = useWeb3Modal();
   const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
   const [showCreateRelayModal, setShowCreateRelayModal] = useState(false);
   const [relays, setRelays] = useState<RelayItem[]>([]);
@@ -108,7 +107,6 @@ const RelayPage: React.FC = () => {
       const receipt = await submitTx.getReceipt(client);
       const topic_id = receipt.topicId!.toString();
 
-      console.log('Creating relay:', { receiverAddress, amount, expiresAt });
       const newRelay = await relayService.createRelay(
         hederaAccountId,
         receiverAddress,
@@ -120,8 +118,6 @@ const RelayPage: React.FC = () => {
 
       
       if (newRelay) {
-        console.log('Relay created successfully:', newRelay);
-        await loadRelays();
         setShowCreateRelayModal(false);
         setToastMessage('Relay created successfully!');
         setToastType('success');
@@ -251,8 +247,6 @@ const RelayPage: React.FC = () => {
         }
 
       if (result) {
-        console.log(`Relay ${action} successful:`, result);
-        await loadRelays();
         setToastMessage(`Relay ${action}d successfully!`);
         setToastType('success');
         setShowToast(true);

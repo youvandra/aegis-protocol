@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 import { LegacyMoment, IF_IM_GONE_OPTIONS } from '../types/legacyMoment';
 
 interface SetMomentModalProps {

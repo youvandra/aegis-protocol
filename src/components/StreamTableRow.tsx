@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Calendar, Trash2, Play, ExternalLink } from 'lucide-react';
 import { Group } from '../types/stream';
 import ConfirmationDialog from './ConfirmationDialog';
-import { useSendTransaction } from 'wagmi';
 
 
 

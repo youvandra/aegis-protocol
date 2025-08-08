@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useWeb3Modal } from '@web3modal/wagmi/react';
+import { useState, useEffect, lazy } from 'react';
 import { Shield, Clock, HeartPulse } from 'lucide-react';
 import { useChainId } from 'wagmi';
-import AestheticNavbar from '../components/AestheticNavbar';
-import SetBeneficiariesForm from '../components/SetBeneficiariesForm';
-import BeneficiariesDisplay from '../components/BeneficiariesDisplay';
-import EditBeneficiaryModal from '../components/EditBeneficiaryModal';
-import SetMomentModal from '../components/SetMomentModal';
-import Toast from '../components/Toast';
-import ConfirmationDialog from '../components/ConfirmationDialog';
+import { useWalletTracking } from '../hooks/useWalletTracking';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
-import { useWalletTracking } from '../hooks/useWalletTracking';
 import { legacyService, walletAccountService } from '../lib/supabase';
 import { formatDuration } from '../utils/time';
+
+// Dynamic imports
+const AestheticNavbar = lazy(() => import('../components/AestheticNavbar'));
+const SetBeneficiariesForm = lazy(() => import('../components/SetBeneficiariesForm'));
+const BeneficiariesDisplay = lazy(() => import('../components/BeneficiariesDisplay'));
+const EditBeneficiaryModal = lazy(() => import('../components/EditBeneficiaryModal'));
+const SetMomentModal = lazy(() => import('../components/SetMomentModal'));
+const Toast = lazy(() => import('../components/Toast'));
+const ConfirmationDialog = lazy(() => import('../components/ConfirmationDialog'));
 
 const LegacyPage: React.FC = () => {
   const { isConnected, hederaAccountId } = useWalletTracking();
   const chainId = useChainId();
-  const { open } = useWeb3Modal();
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [legacyMoment, setLegacyMoment] = useState<LegacyMoment | null>(null);
   const [showSetMomentModal, setShowSetMomentModal] = useState(false);
@@ -308,7 +308,6 @@ const LegacyPage: React.FC = () => {
         setToastMessage('Activity refreshed successfully!');
         setToastType('success');
         setShowToast(true);
-        console.log('Heartbeat refreshed:', updatedUser);
       } else {
         setToastMessage('Failed to refresh activity. Please try again.');
         setToastType('error');

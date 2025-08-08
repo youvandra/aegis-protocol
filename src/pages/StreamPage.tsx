@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { useWeb3Modal } from '@web3modal/wagmi/react';
+import React, { useEffect, useState, lazy } from 'react';
 import { Wallet, Plus, UserPlus } from 'lucide-react';
-import AestheticNavbar from '../components/AestheticNavbar';
-import StreamTable from '../components/StreamTable';
-import CreateGroupModal from '../components/CreateGroupModal';
-import AddMemberModal from '../components/AddMemberModal';
-import Toast from '../components/Toast';
+const AestheticNavbar = lazy(() => import('../components/AestheticNavbar'));
+const StreamTable = lazy(() => import('../components/StreamTable'));
+const CreateGroupModal = lazy(() => import('../components/CreateGroupModal'));
+const AddMemberModal = lazy(() => import('../components/AddMemberModal'));
+const Toast = lazy(() => import('../components/Toast'));
 import { Group } from '../types/stream';
 import { useWalletTracking } from '../hooks/useWalletTracking';
 import { streamService } from '../lib/supabase';
@@ -22,7 +21,6 @@ client.setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
 
 const StreamPage: React.FC = () => {
   const { isConnected, hederaAccountId } = useWalletTracking();
-  const { open } = useWeb3Modal();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'released'>('upcoming');
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,9 +43,7 @@ const StreamPage: React.FC = () => {
   const loadGroups = async () => {
     setLoading(true);
     try {
-      console.log('Loading groups...');
       const groupsData = await streamService.getGroups(hederaAccountId || '');
-      console.log('Loaded groups:', groupsData);
       setGroups(groupsData);
     } catch (error) {
       console.error('Error loading groups:', error);
@@ -95,20 +91,16 @@ const StreamPage: React.FC = () => {
       
       
       if (newGroup) {
-        console.log('Group created successfully:', newGroup);
-        await loadGroups();
         setShowCreateGroupModal(false);
         setToastMessage('Group created successfully!');
         setToastType('success');
         setShowToast(true);
       } else {
-        console.error('Failed to create group - no data returned');
         setToastMessage('Failed to create group. Please try again.');
         setToastType('error');
         setShowToast(true);
       }
     } catch (error) {
-      console.error('Error creating group:', error);
       setToastMessage('Failed to create group. Please try again.');
       setToastType('error');
       setShowToast(true);
@@ -132,7 +124,6 @@ const StreamPage: React.FC = () => {
     }
 
     try {
-      console.log('Adding member with data:', memberData);
       const newMember = await streamService.addMemberToGroup(
         memberData.topicId,
         memberData.groupId,
@@ -152,24 +143,19 @@ const StreamPage: React.FC = () => {
         );
 
       const submitTx = await tx.execute(client);
-      const receipt = await submitTx.getReceipt(client);
+      await submitTx.getReceipt(client);
       
       if (newMember) {
-        console.log('Member added successfully:', newMember);
-        console.log('Member added successfully:', receipt);
-        await loadGroups();
         setShowAddMemberModal(false);
         setToastMessage('Member added successfully!');
         setToastType('success');
         setShowToast(true);
       } else {
-        console.error('Failed to add member - no data returned');
         setToastMessage('Failed to add member. Please try again.');
         setToastType('error');
         setShowToast(true);
       }
     } catch (error) {
-      console.error('Error adding member:', error);
       setToastMessage('Failed to add member. Please try again.');
       setToastType('error');
       setShowToast(true);
@@ -180,11 +166,9 @@ const StreamPage: React.FC = () => {
     if (!hederaAccountId) return;
     
     try {
-      console.log('Deleting group:', groupId);
       const success = await streamService.deleteGroup(groupId, hederaAccountId);
       
       if (success) {
-        console.log('Group deleted successfully');
         setToastMessage('Group deleted successfully!');
         setToastType('success');
         setShowToast(true);
@@ -204,7 +188,6 @@ const StreamPage: React.FC = () => {
     if (!hederaAccountId) return;
     
     try {
-      console.log('Scheduling group:', groupId);
       const getAccountByIdParams = {
           idOrAliasOrEvmAddress: import.meta.env.VITE_HEDERA_ACCOUNT_ID,
           limit: 1,
@@ -228,19 +211,15 @@ const StreamPage: React.FC = () => {
       const scheduledGroup = await streamService.scheduledGroup(groupId, hederaAccountId);
 
       if (scheduledGroup) {
-        console.log('Group scheduled successfully:', scheduledGroup);
-        await loadGroups();
         setToastMessage('Group scheduled successfully!');
         setToastType('success');
         setShowToast(true);
       } else {
-        console.error('Failed to schedule group');
         setToastMessage('Failed to schedule group. Please try again.');
         setToastType('error');
         setShowToast(true);
       }
     } catch (error) {
-      console.error('Error scheduling group:', error);
       setToastMessage('Failed to release group. Please try again.');
       setToastType('error');
       setShowToast(true);

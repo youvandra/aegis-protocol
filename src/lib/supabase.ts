@@ -96,8 +96,6 @@ export const walletAccountService = {
           console.error('Error creating user:', insertError);
           return null;
         }
-
-        console.log('Created new user:', newUser);
         return newUser;
       }
     } catch (error) {
@@ -237,8 +235,6 @@ export const streamService = {
       if (!groupsData || groupsData.length === 0) {
         return [];
       }
-
-      console.log('Raw groups data:', groupsData);
       
       // Transform the data to match the Group interface
       const transformedGroups: Group[] = groupsData.map(group => ({
@@ -258,8 +254,6 @@ export const streamService = {
         txid: group.txid,
         scheduled: group.scheduled
       }));
-
-      console.log('Transformed groups:', transformedGroups);
       return transformedGroups;
     } catch (error) {
       console.error('Error in getGroups:', error);
@@ -297,7 +291,6 @@ export const streamService = {
         return null;
       }
 
-      console.log('Adding member to group:', { groupId, name, memberWalletAddress, amount });
       
       const { data, error } = await supabase
         .from('members')
@@ -315,8 +308,6 @@ export const streamService = {
         console.error('Error details:', error.message, error.details, error.hint);
         return null;
       }
-
-      console.log('Member added successfully:', data);
       return data;
     } catch (error) {
       console.error('Error in addMemberToGroup:', error);
@@ -327,7 +318,6 @@ export const streamService = {
   async deleteGroup(groupId: string, walletAddress: string): Promise<boolean> {
     try {
       setWalletContext(walletAddress);
-      console.log('Deleting group:', { groupId, walletAddress });
       
       const { error } = await supabase
         .from('groups')
@@ -339,7 +329,6 @@ export const streamService = {
         return false;
       }
 
-      console.log('Group deleted successfully');
       return true;
     } catch (error) {
       console.error('Error in deleteGroup:', error);
@@ -350,7 +339,6 @@ export const streamService = {
    async scheduledGroup(groupId: string, walletAddress: string): Promise<boolean> {
     try {
       setWalletContext(walletAddress);
-      console.log('Scheduling group:', { groupId, walletAddress });
 
       const { error } = await supabase
         .from('groups')
@@ -362,7 +350,6 @@ export const streamService = {
         return false;
       }
 
-      console.log('Group scheduled successfully');
       return true;
     } catch (error) {
       console.error('Error in scheduledGroup:', error);
@@ -412,7 +399,6 @@ export const streamService = {
         scheduled: data.scheduled
       };
 
-      console.log('Released group:', transformedGroup);
       return transformedGroup;
     } catch (error) {
       console.error('Error in releaseGroup:', error);
@@ -447,7 +433,6 @@ export const relayService = {
   ): Promise<Relay | null> {
     try {
       setWalletContext(senderAddress);
-      console.log('Creating relay:', { senderAddress, receiverAddress, amount, expiresAt });
       
       // Validate inputs
       if (!senderAddress || !receiverAddress || !amount || amount <= 0) {
@@ -483,7 +468,6 @@ export const relayService = {
         return null;
       }
 
-      console.log('Created relay:', data);
       return data;
     } catch (error) {
       console.error('Error in createRelay:', error);
@@ -523,7 +507,6 @@ export const relayService = {
   ): Promise<Relay | null> {
     try {
       setWalletContext(walletAddress);
-      console.log('Updating relay status:', { relayId, status, walletAddress });
       
       const updateData: any = { status };
       if (transactionHash) updateData.transaction_hash = transactionHash;
@@ -539,8 +522,6 @@ export const relayService = {
         console.error('Error updating relay status:', error);
         return null;
       }
-
-      console.log('Updated relay:', data);
       return data;
     } catch (error) {
       console.error('Error in updateRelayStatus:', error);
@@ -600,7 +581,6 @@ export const legacyService = {
   ): Promise<LegacyPlan | null> {
     try {
       setWalletContext(walletAddress);
-      console.log('Creating/updating legacy plan:', { walletAddress, momentConfig });
       
       // First, check if a legacy plan already exists for this wallet
       const { data: existingPlan, error: fetchError } = await supabase
@@ -633,7 +613,6 @@ export const legacyService = {
           return null;
         }
 
-        console.log('Updated legacy plan:', data);
         return data;
       } else {
         // Create new plan
@@ -653,8 +632,6 @@ export const legacyService = {
           console.error('Error creating legacy plan:', error);
           return null;
         }
-
-        console.log('Created new legacy plan:', data);
         return data;
       }
     } catch (error) {
@@ -708,7 +685,6 @@ export const legacyService = {
       }
       
       setWalletContext(legacyPlan.wallet_address);
-      console.log('Adding beneficiary:', { legacyPlanId, beneficiaryData });
       
       const { data, error } = await supabase
         .from('beneficiaries')
@@ -736,7 +712,6 @@ export const legacyService = {
         notes: data.notes || '',
       };
 
-      console.log('Added beneficiary:', transformedBeneficiary);
       return transformedBeneficiary;
     } catch (error) {
       console.error('Error in addBeneficiary:', error);
@@ -844,7 +819,6 @@ export const legacyService = {
       }
       
       setWalletContext(beneficiary.legacy_plans[0].wallet_address);
-      console.log('Updating beneficiary:', { beneficiaryId, beneficiaryData });
       
       const { data, error } = await supabase
         .from('beneficiaries')
@@ -872,7 +846,6 @@ export const legacyService = {
         notes: data.notes || '',
       };
 
-      console.log('Updated beneficiary:', transformedBeneficiary);
       return transformedBeneficiary;
     } catch (error) {
       console.error('Error in updateBeneficiary:', error);
