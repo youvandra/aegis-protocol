@@ -91,6 +91,7 @@ const StreamPage: React.FC = () => {
       
       
       if (newGroup) {
+        await loadGroups();
         setShowCreateGroupModal(false);
         setToastMessage('Group created successfully!');
         setToastType('success');
@@ -146,6 +147,7 @@ const StreamPage: React.FC = () => {
       await submitTx.getReceipt(client);
       
       if (newMember) {
+        await loadGroups();
         setShowAddMemberModal(false);
         setToastMessage('Member added successfully!');
         setToastType('success');
@@ -211,6 +213,7 @@ const StreamPage: React.FC = () => {
       const scheduledGroup = await streamService.scheduledGroup(groupId, hederaAccountId);
 
       if (scheduledGroup) {
+        await loadGroups();
         setToastMessage('Group scheduled successfully!');
         setToastType('success');
         setShowToast(true);

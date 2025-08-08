@@ -368,7 +368,7 @@ const LegacyPage: React.FC = () => {
                 <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-3 shadow-md">
                   <div className="flex items-center space-x-2">
                     <Clock className="w-4 h-4 text-gray-600" />
-                    <span className="text-sm text-gray-600">Inactive for:</span>
+                    <span className="text-sm text-gray-600">Last Seen:</span>
                     <span className="text-sm font-semibold text-gray-900">
                       {timeInactive || 'Loading...'}
                     </span>
