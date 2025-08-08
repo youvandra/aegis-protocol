@@ -16,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({  }) => {
       <nav className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center">
           <img 
-            src="/logoap.png" 
+            src="/logoap.svg" 
             alt="Aegis Protocol" 
             className="h-16 w-auto"
           />
