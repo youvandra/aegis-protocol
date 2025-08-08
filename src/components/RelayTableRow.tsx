@@ -8,6 +8,36 @@ interface RelayTableRowProps {
   onRelayAction: (relayId: string, action: 'approve' | 'reject' | 'execute' | 'cancel') => void;
 }
 
+const SignatureDisplay: React.FC<{ topicId: string }> = ({ topicId }) => {
+  const [signature, setSignature] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchSignature = async () => {
+      try {
+        const res = await fetch(
+          `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages?limit=1&order=desc`
+        );
+        if (!res.ok) {
+          setSignature(null);
+          return;
+        }
+        const data = await res.json();
+        if (data && data.messages && data.messages.length > 0) {
+          const sig = data.messages[0].message;
+          setSignature(sig.length > 16 ? `${sig.slice(0, 20)}...${sig.slice(-8)}` : sig);
+        } else {
+          setSignature(null);
+        }
+      } catch {
+        setSignature(null);
+      }
+    };
+    fetchSignature();
+  }, [topicId]);
+
+  return <span>{signature ? signature : 'No signature found'}</span>;
+};
+
 const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRelayAction }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -18,8 +48,6 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Request Initiated':
-        return 'text-blue-600 bg-blue-50';
       case 'Waiting for Receiver\'s Approval':
         return 'text-yellow-600 bg-yellow-50';
       case 'Waiting for Sender to Execute':
@@ -98,7 +126,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
     }
     
     // Receiver gets approve/reject buttons when relay is initiated
-    if (isReceiver && item.status === 'Request Initiated') {
+    if (isReceiver && item.status === 'Waiting for Receiver\'s Approval') {
       return (
         <div className="flex space-x-2">
           <button
@@ -124,7 +152,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
     }
     
     // Sender gets execute/cancel buttons after receiver approves
-    if (isSender && item.status === 'Waiting for Receiver\'s Approval') {
+    if (isSender && item.status === 'Waiting for Sender to Execute') {
       return (
         <div className="flex space-x-2">
           <button
@@ -150,7 +178,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
     }
     
     // Sender can cancel if still in initial state (before receiver action)
-    if (isSender && item.status === 'Request Initiated') {
+    if (isSender && item.status === 'Waiting for Receiver\'s Approval') {
       return (
         <button
           onClick={(e) => {
@@ -181,7 +209,7 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
             ) : (
               <ChevronDown className="w-4 h-4 mr-2 text-gray-400" />
             )}
-            {item.relay_number}
+            {item.topic_id}
           </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
@@ -220,35 +248,92 @@ const RelayTableRow: React.FC<RelayTableRowProps> = ({ item, currentWallet, onRe
                   <span className="font-medium text-gray-700">To Address:</span>
                   <p className="text-gray-600 font-mono text-xs break-all">{item.receiver_address}</p>
                 </div>
-                {item.expires_at && (
+                {item.topic_id && (
                   <div>
-                    <span className="font-medium text-gray-700">Expires At:</span>
-                    <p className="text-gray-600">{new Date(item.expires_at).toLocaleString()}</p>
+                    <span className="font-medium text-gray-700">Topic:</span>
+                    <p className="text-gray-600 font-mono text-xs break-all flex items-center">
+                      {item.topic_id}
+                      <a
+                        href={`https://hashscan.io/testnet/topic/${item.topic_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 text-blue-500 hover:text-blue-700"
+                        title="View on HashScan"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 13v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h6m5-3h-6m6 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </p>
                   </div>
                 )}
                 {item.transaction_hash && (
                   <div>
-                    <span className="font-medium text-gray-700">Transaction Hash:</span>
-                    <p className="text-gray-600 font-mono text-xs break-all">{item.transaction_hash}</p>
+                    <span className="font-medium text-gray-700">Relay Transaction:</span>
+                    <p className="text-gray-600 font-mono text-xs break-all flex items-center">
+                      {item.transaction_hash}
+                      <a
+                        href={`https://hashscan.io/testnet/transaction/${item.transaction_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 text-blue-500 hover:text-blue-700"
+                        title="View on HashScan"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 13v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h6m5-3h-6m6 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </p>
                   </div>
                 )}
-                {item.gas_used && (
+                {item.topic_id && (
                   <div>
-                    <span className="font-medium text-gray-700">Gas Used:</span>
-                    <p className="text-gray-600">{item.gas_used}</p>
+                    <span className="font-medium text-gray-700">Signature:</span>
+                    <p className="text-gray-600 font-mono text-xs break-all flex items-center">
+                      <SignatureDisplay topicId={item.topic_id} />
+                      <a
+                        href={`https://hashscan.io/testnet/topic/${item.topic_id}/messages`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 text-blue-500 hover:text-blue-700"
+                        title="View on HashScan"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 13v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h6m5-3h-6m6 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </p>
                   </div>
                 )}
               </div>
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Created: {formatDateTime(item.created_at)}</span>
-                  <span>Updated: {formatDateTime(item.updated_at)}</span>
-                </div>
-              </div>
-            </div>
-          </td>
-        </tr>
-      )}
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Created: {formatDateTime(item.created_at)}</span>
+            <span>Updated: {formatDateTime(item.updated_at)}</span>
+          </div>
+        </div>
+      </div>
+    </td>
+  </tr>
+)}
     </>
   );
 };

@@ -142,7 +142,7 @@ const EditBeneficiaryModal: React.FC<EditBeneficiaryModalProps> = ({
               id="editAddress"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c"
+              placeholder="0.0.6526667"
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 font-mono text-sm ${
                 isDuplicateAddress
                   ? 'border-red-300 focus:ring-red-500 bg-red-50'
@@ -253,7 +253,7 @@ const EditBeneficiaryModal: React.FC<EditBeneficiaryModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isDuplicateAddress}
+              disabled={!!isDuplicateAddress}
               className={`flex-1 px-4 py-2 rounded-md transition-colors duration-200 font-medium ${
                 isDuplicateAddress
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'

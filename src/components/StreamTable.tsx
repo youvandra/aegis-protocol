@@ -6,14 +6,14 @@ import { Group } from '../types/stream';
 interface StreamTableProps {
   data: Group[];
   onDeleteGroup?: (groupId: string) => void;
-  onReleaseGroup?: (groupId: string) => void;
+  onScheduleGroup?: (groupId: string) => void;
   itemsPerPage?: number;
 }
 
 const StreamTable: React.FC<StreamTableProps> = ({ 
   data, 
   onDeleteGroup, 
-  onReleaseGroup, 
+  onScheduleGroup, 
   itemsPerPage = 10 
 }) => {
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -94,7 +94,7 @@ const StreamTable: React.FC<StreamTableProps> = ({
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Number
+                Group ID
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Group Name
@@ -126,7 +126,7 @@ const StreamTable: React.FC<StreamTableProps> = ({
                   key={group.id} 
                   group={group} 
                   onDeleteGroup={onDeleteGroup}
-                  onReleaseGroup={onReleaseGroup}
+                  onScheduledGroup={onScheduleGroup}
                 />
               ))
             )}

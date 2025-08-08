@@ -38,9 +38,9 @@ useEffect(() => {
       return;
     }
 
-    const MY_ACCOUNT_ID = AccountId.fromString("0.0.6496404");
+    const MY_ACCOUNT_ID = AccountId.fromString(import.meta.env.VITE_HEDERA_ACCOUNT_ID!);
     const MY_PRIVATE_KEY = PrivateKey.fromStringECDSA(
-      "cd6b997c0df744d9740ef249d5643a532ad7a58450b7135b719126bb80c2a1be"
+      import.meta.env.VITE_HEDERA_PRIVATE_KEY!
     );
 
     const client = Client.forTestnet().setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
@@ -53,7 +53,7 @@ useEffect(() => {
       const info = await new AccountInfoQuery()
         .setAccountId(accountIdFromEvm)
         .execute(client);
-
+      
       setHederaAccountId(info.accountId.toString()); // Ini udah "0.0.num"
     } catch (err) {
       console.error("Failed to resolve Hedera account ID:", err);

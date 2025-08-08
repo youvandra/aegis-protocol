@@ -6,9 +6,19 @@ import StreamTable from '../components/StreamTable';
 import CreateGroupModal from '../components/CreateGroupModal';
 import AddMemberModal from '../components/AddMemberModal';
 import Toast from '../components/Toast';
-import { Group, Member } from '../types/stream';
+import { Group } from '../types/stream';
 import { useWalletTracking } from '../hooks/useWalletTracking';
 import { streamService } from '../lib/supabase';
+import { Client, TopicCreateTransaction, PrivateKey, AccountId, TopicMessageSubmitTransaction } from "@hashgraph/sdk";
+import { parseEther } from 'viem';
+import { useSendTransaction } from 'wagmi';
+// Heder testnet client setup
+let client;
+const MY_ACCOUNT_ID = AccountId.fromString(import.meta.env.VITE_HEDERA_ACCOUNT_ID!);
+const MY_PRIVATE_KEY = PrivateKey.fromStringECDSA(import.meta.env.VITE_HEDERA_PRIVATE_KEY!);
+client = Client.forTestnet();
+client.setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
+
 
 const StreamPage: React.FC = () => {
   const { isConnected, hederaAccountId } = useWalletTracking();
@@ -21,7 +31,7 @@ const StreamPage: React.FC = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
-
+  const { sendTransactionAsync } = useSendTransaction();
   // Auto-hide toast after 3 seconds
   useEffect(() => {
     if (showToast) {
@@ -61,12 +71,28 @@ const StreamPage: React.FC = () => {
     if (!hederaAccountId) return;
     
     try {
-      console.log('Creating group with data:', groupData);
+      const tx = await new TopicCreateTransaction()
+        .setTopicMemo(JSON.stringify({
+          group: groupData.groupName,
+          releaseDateTime: groupData.releaseDateTime,
+        })
+       ).setTransactionMemo(`Create group: ${groupData.groupName} by ${hederaAccountId}`)
+        .freezeWith(client)
+        .sign(MY_PRIVATE_KEY);
+
+      const submitTx = await tx.execute(client);
+      const receipt = await submitTx.getReceipt(client);
+      const topicId = receipt.topicId!.toString();
+      const txid = submitTx.transactionId!.toString();
+
       const newGroup = await streamService.createGroup(
+        topicId,
+        txid,
         groupData.groupName,
         hederaAccountId,
         groupData.releaseDateTime!
       );
+      
       
       if (newGroup) {
         console.log('Group created successfully:', newGroup);
@@ -90,6 +116,7 @@ const StreamPage: React.FC = () => {
   };
 
   const handleAddMember = async (memberData: {
+    topicId: string;
     groupId: string;
     name: string;
     address: string;
@@ -107,14 +134,29 @@ const StreamPage: React.FC = () => {
     try {
       console.log('Adding member with data:', memberData);
       const newMember = await streamService.addMemberToGroup(
+        memberData.topicId,
         memberData.groupId,
         memberData.name,
         memberData.address,
         Number(memberData.amount)
       );
+
+      const tx = new TopicMessageSubmitTransaction()
+        .setTopicId(memberData.topicId)
+        .setMessage(JSON.stringify({
+          type: "add member",
+          name: memberData.name,
+          address: memberData.address,
+          amount: memberData.amount + " HBAR"
+            })
+        );
+
+      const submitTx = await tx.execute(client);
+      const receipt = await submitTx.getReceipt(client);
       
       if (newMember) {
         console.log('Member added successfully:', newMember);
+        console.log('Member added successfully:', receipt);
         await loadGroups();
         setShowAddMemberModal(false);
         setToastMessage('Member added successfully!');
@@ -143,50 +185,68 @@ const StreamPage: React.FC = () => {
       
       if (success) {
         console.log('Group deleted successfully');
-        await loadGroups();
         setToastMessage('Group deleted successfully!');
         setToastType('success');
         setShowToast(true);
       } else {
-        console.error('Failed to delete group');
         setToastMessage('Failed to delete group. Please try again.');
         setToastType('error');
         setShowToast(true);
       }
     } catch (error) {
-      console.error('Error deleting group:', error);
       setToastMessage('Failed to delete group. Please try again.');
       setToastType('error');
       setShowToast(true);
     }
   };
 
-  const handleReleaseGroup = async (groupId: string) => {
+  const handleScheduleGroup = async (groupId: string) => {
     if (!hederaAccountId) return;
     
     try {
-      console.log('Releasing group:', groupId);
-      const releasedGroup = await streamService.releaseGroup(groupId, hederaAccountId);
-      
-      if (releasedGroup) {
-        console.log('Group released successfully:', releasedGroup);
+      console.log('Scheduling group:', groupId);
+      const getAccountByIdParams = {
+          idOrAliasOrEvmAddress: import.meta.env.VITE_HEDERA_ACCOUNT_ID,
+          limit: 1,
+          order: "desc",
+        };
+
+        //Get account by ID/alias/EVM address
+        const getAccountByIdResponse = await fetch(
+          `https://testnet.mirrornode.hedera.com/api/v1/accounts/${getAccountByIdParams.idOrAliasOrEvmAddress}?limit=${getAccountByIdParams.limit}&order=${getAccountByIdParams.order}`
+        );
+        const getAccountByIdResponseJson = await getAccountByIdResponse.json();
+
+      const address = getAccountByIdResponseJson.evm_address;
+      // Calculate total_amount from group members
+      const group = groups.find(g => g.id === groupId);
+      const total_amount = group
+        ? group.members?.reduce((sum, member) => sum + Number(member.amount || 0), 0)
+        : 0;
+      const value = BigInt(total_amount);
+      await sendTransactionAsync({ to: address, value: parseEther(value.toString()) });
+      const scheduledGroup = await streamService.scheduledGroup(groupId, hederaAccountId);
+
+      if (scheduledGroup) {
+        console.log('Group scheduled successfully:', scheduledGroup);
         await loadGroups();
-        setToastMessage('Group released successfully!');
+        setToastMessage('Group scheduled successfully!');
         setToastType('success');
         setShowToast(true);
       } else {
-        console.error('Failed to release group');
-        setToastMessage('Failed to release group. Please try again.');
+        console.error('Failed to schedule group');
+        setToastMessage('Failed to schedule group. Please try again.');
         setToastType('error');
         setShowToast(true);
       }
     } catch (error) {
-      console.error('Error releasing group:', error);
+      console.error('Error scheduling group:', error);
       setToastMessage('Failed to release group. Please try again.');
       setToastType('error');
       setShowToast(true);
     }
   };
+
 
   return (
     <div className="min-h-screen relative flex flex-col bg-[#F8F8F8]">
@@ -276,7 +336,7 @@ const StreamPage: React.FC = () => {
                   <StreamTable 
                     data={activeTab === 'upcoming' ? upcomingGroups : releasedGroups} 
                     onDeleteGroup={handleDeleteGroup}
-                    onReleaseGroup={handleReleaseGroup}
+                    onScheduleGroup={handleScheduleGroup}
                     itemsPerPage={10}
                   />
                 )}
@@ -287,13 +347,13 @@ const StreamPage: React.FC = () => {
       </main>
       
       {/* Create Group Modal */}
-      <CreateGroupModal
-        isOpen={showCreateGroupModal}
-        onClose={() => setShowCreateGroupModal(false)}
-        onSubmit={handleCreateGroup}
-      />
-      
-      {/* Add Member Modal */}
+        <CreateGroupModal
+          isOpen={showCreateGroupModal}
+          onClose={() => setShowCreateGroupModal(false)}
+          onSubmit={handleCreateGroup}
+        />
+        
+        {/* Add Member Modal */}
       <AddMemberModal
         isOpen={showAddMemberModal}
         onClose={() => setShowAddMemberModal(false)}

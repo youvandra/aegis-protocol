@@ -1,11 +1,10 @@
 import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
-import { mainnet, sepolia } from 'wagmi/chains'
-import { Chain } from 'wagmi'
+import { Chain } from 'wagmi/chains'
+import { injected } from 'wagmi/connectors';
 
 export const hederaTestnet: Chain = {
   id: 296,
   name: 'Hedera Testnet',
-  network: 'hedera-testnet',
   nativeCurrency: {
     name: 'HBAR',
     symbol: 'HBAR',
@@ -38,5 +37,6 @@ const chains = [hederaTestnet] as const
 export const config = defaultWagmiConfig({
   chains,
   projectId,
+  connectors: [injected()],
   metadata,
 })

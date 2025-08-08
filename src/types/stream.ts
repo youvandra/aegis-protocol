@@ -21,4 +21,7 @@ export interface Group {
   status: 'upcoming' | 'released';
   created_at: string;
   updated_at: string;
+  topic_id: string;
+  txid: string;
+  scheduled: boolean;
 }

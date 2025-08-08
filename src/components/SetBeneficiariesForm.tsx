@@ -21,7 +21,7 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({
   const [notes, setNotes] = useState('');
 
   // Check if address already exists in beneficiaries
-  const isDuplicateAddress = address.trim() && existingBeneficiaries.some(
+  const isDuplicateAddress = !!address.trim() && existingBeneficiaries.some(
     beneficiary => beneficiary.address.toLowerCase() === address.trim().toLowerCase()
   );
   const handleSubmit = (e: React.FormEvent) => {
@@ -97,7 +97,7 @@ const SetBeneficiariesForm: React.FC<SetBeneficiariesFormProps> = ({
             id="address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c"
+            placeholder="0.0.6526667"
             className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 font-mono text-sm ${
               isDuplicateAddress
                 ? 'border-red-300 focus:ring-red-500 bg-red-50'

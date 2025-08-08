@@ -5,7 +5,6 @@ import { LegacyMoment } from '../types/legacyMoment';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
@@ -177,6 +176,8 @@ export const walletAccountService = {
 // Stream service for managing groups and members
 export const streamService = {
   async createGroup(
+    topicId: string,
+    txid: string,
     groupName: string,
     walletAddress: string,
     releaseDateTime: string
@@ -193,7 +194,9 @@ export const streamService = {
           wallet_address: walletAddress.toLowerCase(),
           total_members: 0,
           total_amount: 0,
-          status: 'upcoming'
+          status: 'upcoming',
+          topic_id: topicId,
+          txid: txid,
         })
         .select()
         .single();
@@ -250,7 +253,10 @@ export const streamService = {
         status: group.status,
         created_at: group.created_at,
         updated_at: group.updated_at,
-        members: Array.isArray(group.members) ? group.members : []
+        members: Array.isArray(group.members) ? group.members : [],
+        topic_id: group.topic_id,
+        txid: group.txid,
+        scheduled: group.scheduled
       }));
 
       console.log('Transformed groups:', transformedGroups);
@@ -262,6 +268,7 @@ export const streamService = {
   },
 
   async addMemberToGroup(
+    topic_id: string,
     groupId: string,
     name: string,
     memberWalletAddress: string,
@@ -274,6 +281,7 @@ export const streamService = {
         .from('groups')
         .select('wallet_address')
         .eq('id', groupId)
+        .eq('topic_id', topic_id)
         .single();
       
       if (groupError || !groupData) {
@@ -339,16 +347,38 @@ export const streamService = {
     }
   },
 
+   async scheduledGroup(groupId: string, walletAddress: string): Promise<boolean> {
+    try {
+      setWalletContext(walletAddress);
+      console.log('Scheduling group:', { groupId, walletAddress });
+
+      const { error } = await supabase
+        .from('groups')
+        .update({ scheduled: true })
+        .eq('id', groupId);
+
+      if (error) {
+        console.error('Error scheduling group:', error);
+        return false;
+      }
+
+      console.log('Group scheduled successfully');
+      return true;
+    } catch (error) {
+      console.error('Error in scheduledGroup:', error);
+      return false;
+    }
+  },
+
   async releaseGroup(groupId: string, walletAddress: string): Promise<Group | null> {
     try {
       setWalletContext(walletAddress);
-      console.log('Releasing group:', { groupId, walletAddress });
       
       const { data, error } = await supabase
         .from('groups')
         .update({ 
           status: 'released',
-          release_date: new Date().toISOString() // Set release date to current timestamp
+          release_date: new Date().toISOString() 
         })
         .eq('id', groupId)
         .eq('status', 'upcoming') // Only allow releasing upcoming groups
@@ -376,7 +406,10 @@ export const streamService = {
         status: data.status,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        members: Array.isArray(data.members) ? data.members : []
+        members: Array.isArray(data.members) ? data.members : [],
+        topic_id: data.topic_id,
+        txid: data.txid,
+        scheduled: data.scheduled
       };
 
       console.log('Released group:', transformedGroup);
@@ -395,9 +428,9 @@ export interface Relay {
   sender_address: string;
   receiver_address: string;
   amount: number;
-  status: 'Request Initiated' | 'Waiting for Receiver\'s Approval' | 'Waiting for Sender to Execute' | 'Complete' | 'Rejected' | 'Expired';
+  status:  'Waiting for Receiver\'s Approval' | 'Waiting for Sender to Execute' | 'Complete' | 'Rejected' | 'Expired';
   transaction_hash?: string;
-  gas_used?: string;
+  topic_id?: string;
   expires_at?: string;
   created_at: string;
   updated_at: string;
@@ -409,7 +442,8 @@ export const relayService = {
     senderAddress: string,
     receiverAddress: string,
     amount: number,
-    expiresAt?: string
+    expiresAt?: string,
+    topic_id?: string
   ): Promise<Relay | null> {
     try {
       setWalletContext(senderAddress);
@@ -425,7 +459,8 @@ export const relayService = {
         sender_address: senderAddress.toLowerCase(),
         receiver_address: receiverAddress.toLowerCase(),
         amount: amount,
-        status: 'Request Initiated'
+        status: 'Waiting for Receiver\'s Approval',
+        topic_id: topic_id
       };
 
       if (expiresAt) {
@@ -485,7 +520,6 @@ export const relayService = {
     status: Relay['status'],
     walletAddress: string,
     transactionHash?: string,
-    gasUsed?: string
   ): Promise<Relay | null> {
     try {
       setWalletContext(walletAddress);
@@ -493,7 +527,6 @@ export const relayService = {
       
       const updateData: any = { status };
       if (transactionHash) updateData.transaction_hash = transactionHash;
-      if (gasUsed) updateData.gas_used = gasUsed;
       
       const { data, error } = await supabase
         .from('relays')
@@ -516,7 +549,7 @@ export const relayService = {
   },
 
   async approveRelay(relayId: string, receiverAddress: string): Promise<Relay | null> {
-    return this.updateRelayStatus(relayId, 'Waiting for Receiver\'s Approval', receiverAddress);
+    return this.updateRelayStatus(relayId, 'Waiting for Sender to Execute', receiverAddress);
   },
 
   async rejectRelay(relayId: string, receiverAddress: string): Promise<Relay | null> {
@@ -527,9 +560,8 @@ export const relayService = {
     relayId: string, 
     senderAddress: string, 
     transactionHash: string, 
-    gasUsed?: string
   ): Promise<Relay | null> {
-    return this.updateRelayStatus(relayId, 'Complete', senderAddress, transactionHash, gasUsed);
+    return this.updateRelayStatus(relayId, 'Complete', senderAddress, transactionHash);
   },
 
   async cancelRelay(relayId: string, senderAddress: string): Promise<Relay | null> {
@@ -772,7 +804,7 @@ export const legacyService = {
         return false;
       }
       
-      setWalletContext(beneficiary.legacy_plans.wallet_address);
+      setWalletContext(beneficiary.legacy_plans[0].wallet_address);
       
       const { error } = await supabase
         .from('beneficiaries')
@@ -811,7 +843,7 @@ export const legacyService = {
         return null;
       }
       
-      setWalletContext(beneficiary.legacy_plans.wallet_address);
+      setWalletContext(beneficiary.legacy_plans[0].wallet_address);
       console.log('Updating beneficiary:', { beneficiaryId, beneficiaryData });
       
       const { data, error } = await supabase
