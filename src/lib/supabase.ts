@@ -9,20 +9,80 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Session established by `walletAuth.signIn`. The JWT is signed by the
+// `wallet-auth` edge function after it verifies a wallet signature, so its
+// `wallet_address` claim is something RLS can actually trust.
+//
+// `X-Wallet-Address` is still sent alongside it for the legacy header-based
+// policies. Once the JWT migration has been applied to the database, those
+// policies are gone and the header is ignored.
+interface WalletSession {
+  token: string;
+  walletAddress: string;
+  /** Unix seconds. */
+  expiresAt: number;
+}
 
-// Set wallet address in headers for RLS policies
-export const setWalletContext = (walletAddress: string) => {
-  supabase.rest.headers = {
-    ...supabase.rest.headers,
-    'X-Wallet-Address': walletAddress.toLowerCase()
-  };
+let session: WalletSession | null = null;
+let walletContext: string | null = null;
+
+const isExpired = (candidate: WalletSession) =>
+  candidate.expiresAt * 1000 <= Date.now();
+
+const walletAwareFetch: typeof fetch = (input, init) => {
+  const headers = new Headers(init?.headers);
+
+  if (session && isExpired(session)) {
+    session = null;
+  }
+
+  if (session) {
+    headers.set('Authorization', `Bearer ${session.token}`);
+  }
+
+  if (walletContext) {
+    headers.set('X-Wallet-Address', walletContext);
+  }
+
+  return fetch(input, { ...init, headers });
 };
 
-// Clear wallet context
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: { fetch: walletAwareFetch },
+});
+
+/** Store a verified wallet session. */
+export const setWalletSession = (
+  token: string,
+  walletAddress: string,
+  expiresAt: number
+) => {
+  session = { token, walletAddress, expiresAt };
+  walletContext = walletAddress.toLowerCase();
+};
+
+/** Drop the verified wallet session. */
+export const clearWalletSession = () => {
+  session = null;
+  walletContext = null;
+};
+
+/** True while a non-expired wallet session is held. */
+export const hasWalletSession = () => Boolean(session && !isExpired(session));
+
+/**
+ * Set the wallet address used for RLS scoping without a verified session.
+ *
+ * Only meaningful against the legacy header-based policies; it grants nothing
+ * once the JWT policies are in place.
+ */
+export const setWalletContext = (walletAddress: string) => {
+  walletContext = walletAddress.toLowerCase();
+};
+
+/** Clear the wallet address used for RLS scoping. */
 export const clearWalletContext = () => {
-  const { 'X-Wallet-Address': removed, ...restHeaders } = supabase.rest.headers;
-  supabase.rest.headers = restHeaders;
+  walletContext = null;
 };
 
 // User interface for the database
@@ -440,7 +500,7 @@ export const relayService = {
         return null;
       }
 
-      const insertData: any = {
+      const insertData: Partial<Relay> = {
         sender_address: senderAddress.toLowerCase(),
         receiver_address: receiverAddress.toLowerCase(),
         amount: amount,
@@ -508,7 +568,7 @@ export const relayService = {
     try {
       setWalletContext(walletAddress);
       
-      const updateData: any = { status };
+      const updateData: Partial<Relay> = { status };
       if (transactionHash) updateData.transaction_hash = transactionHash;
       
       const { data, error } = await supabase

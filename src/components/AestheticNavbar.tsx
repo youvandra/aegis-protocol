@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAccount, useDisconnect, useBalance } from "wagmi";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
-import { DoorOpen } from "lucide-react";
+import { Check, DoorOpen } from "lucide-react";
 import { useWalletTracking } from "../hooks/useWalletTracking";
-import { AccountId, AccountInfoQuery, Client, PrivateKey } from "@hashgraph/sdk";
 
 interface AestheticNavbarProps {
   leftLinkPath: string;
@@ -25,49 +24,54 @@ const AestheticNavbar: React.FC<AestheticNavbarProps> = ({
   const { address } = useAccount();
   const { disconnect } = useDisconnect();
   const { open } = useWeb3Modal();
-  const { isConnected } = useWalletTracking();
+  // The Hedera account ID is resolved once, in the tracking hook, via the
+  // public mirror node — no operator key involved.
+  const { isConnected, hederaAccountId, authenticating, authError, retryAuthentication } =
+    useWalletTracking();
   const { data: balance } = useBalance({ address });
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [hederaAccountId, setHederaAccountId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Resolve EVM → Hedera Account ID
-useEffect(() => {
-  const fetchAccountInfo = async () => {
-    if (!address) {
-      setHederaAccountId(null);
-      return;
-    }
+  // Close the dropdown on an outside click or Escape.
+  useEffect(() => {
+    if (!dropdownOpen) return;
 
-    const MY_ACCOUNT_ID = AccountId.fromString(import.meta.env.VITE_HEDERA_ACCOUNT_ID!);
-    const MY_PRIVATE_KEY = PrivateKey.fromStringECDSA(
-      import.meta.env.VITE_HEDERA_PRIVATE_KEY!
-    );
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!dropdownRef.current?.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDropdownOpen(false);
+    };
 
-    const client = Client.forTestnet().setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [dropdownOpen]);
 
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const handleCopyAddress = async () => {
     try {
-      // Convert EVM → Hedera AccountId instance
-      const accountIdFromEvm = AccountId.fromEvmAddress(0, 0, address);
-
-      // Query pakai Hedera AccountId (bukan string address langsung)
-      const info = await new AccountInfoQuery()
-        .setAccountId(accountIdFromEvm)
-        .execute(client);
-      
-      setHederaAccountId(info.accountId.toString()); // Ini udah "0.0.num"
-    } catch (err) {
-      console.error("Failed to resolve Hedera account ID:", err);
-      setHederaAccountId(null);
+      await navigator.clipboard.writeText(hederaAccountId || address || "");
+      setCopied(true);
+    } catch (error) {
+      console.error("Failed to copy address:", error);
     }
   };
 
-  fetchAccountInfo();
-}, [address]);
-
-
   return (
-    <nav className="w-full py-8 px-8">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
+    <nav className="w-full py-6 px-4 sm:py-8 sm:px-8">
+      <div className="max-w-7xl mx-auto flex justify-between items-center gap-3">
         {/* Homepage Button */}
         <Link
           to="/"
@@ -131,19 +135,38 @@ useEffect(() => {
 
         {/* Wallet Connection */}
         <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1 min-w-fit">
-          {isConnected ? (
+          {isConnected && authError ? (
+            <button
+              type="button"
+              onClick={retryAuthentication}
+              className="flex items-center gap-2 text-xs sm:text-sm font-medium text-red-600 hover:text-red-700"
+              title={authError}
+            >
+              <span className="h-2 w-2 rounded-full bg-red-500" />
+              Sign-in failed — retry
+            </button>
+          ) : isConnected ? (
             <div className="flex items-center space-x-3 relative">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <div className="relative">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  authenticating ? "animate-pulse bg-amber-500" : "bg-green-500"
+                }`}
+              ></div>
+              <div className="relative" ref={dropdownRef}>
                 <button
-                  className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 hidden sm:inline px-2 py-1 rounded"
-                  onClick={() => setDropdownOpen((open) => !open)}
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={dropdownOpen}
+                  aria-label="Wallet options"
+                  className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 px-2 py-1 rounded"
+                  onClick={() => setDropdownOpen((isOpen) => !isOpen)}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                     <span className="text-xs sm:text-sm text-gray-700 font-medium">
-                      {hederaAccountId
-                        ? `${hederaAccountId}`
-                        : `${address?.slice(0, 6)}...${address?.slice(-4)}`}
+                      {authenticating
+                        ? "Signing in…"
+                        : hederaAccountId ??
+                          `${address?.slice(0, 6)}...${address?.slice(-4)}`}
                     </span>
                     {balance && (
                       <span className="text-xs text-gray-600 font-mono">
@@ -155,17 +178,22 @@ useEffect(() => {
 
                 {/* Dropdown */}
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-36 bg-white rounded shadow-lg border border-gray-200 z-10">
+                  <div
+                    role="menu"
+                    className="absolute right-0 mt-2 w-36 bg-white rounded shadow-lg border border-gray-200 z-10"
+                  >
                     <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(hederaAccountId || address || "");
-                        setDropdownOpen(false);
-                      }}
-                      className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                      type="button"
+                      role="menuitem"
+                      onClick={handleCopyAddress}
+                      className="flex w-full items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
                     >
-                      Copy Address
+                      <span>{copied ? "Copied" : "Copy Address"}</span>
+                      {copied && <Check size={12} className="text-green-600" />}
                     </button>
                     <button
+                      type="button"
+                      role="menuitem"
                       onClick={() => {
                         disconnect();
                         setDropdownOpen(false);
@@ -180,6 +208,7 @@ useEffect(() => {
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => open()}
               className="text-xs sm:text-sm text-gray-700 hover:text-black transition-colors duration-200 font-medium"
             >

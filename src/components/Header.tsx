@@ -3,17 +3,17 @@ import { Link } from 'react-router-dom';
 import { useWalletTracking } from '../hooks/useWalletTracking';
 
 interface HeaderProps {
-  isConnected: boolean;
-  onWalletRequired?: () => void;
+  onWalletRequired: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({  }) => {
+const Header: React.FC<HeaderProps> = ({ onWalletRequired }) => {
   // Track wallet connections automatically
-  useWalletTracking();
+  const { isConnected, hederaAccountId, authenticating, authError, retryAuthentication } =
+    useWalletTracking();
 
   return (
-    <header className="w-full py-8 px-8">
-      <nav className="flex items-center justify-between max-w-7xl mx-auto">
+    <header className="w-full py-6 px-4 sm:py-8 sm:px-8">
+      <nav className="flex items-center justify-between gap-3 max-w-7xl mx-auto">
         <div className="flex items-center">
           <img 
             src="/logoap.svg" 
@@ -72,6 +72,40 @@ const Header: React.FC<HeaderProps> = ({  }) => {
               </p>
             </div>
           </div>
+
+
+          {/* Wallet Connection */}
+          <button
+            type="button"
+            onClick={
+              isConnected && authError
+                ? retryAuthentication
+                : isConnected
+                  ? undefined
+                  : onWalletRequired
+            }
+            disabled={isConnected && !authError}
+            title={authError ?? undefined}
+            className="text-sm md:text-base font-medium px-4 py-2 rounded-lg bg-white/80 backdrop-blur-sm shadow-md transition-all duration-200 hover:bg-white/95 disabled:cursor-default disabled:opacity-90"
+          >
+            {!isConnected ? (
+              <span className="text-gray-800">Connect Wallet</span>
+            ) : authError ? (
+              <span className="flex items-center gap-2 text-red-600">
+                <span className="h-2 w-2 rounded-full bg-red-500" />
+                Sign-in failed — retry
+              </span>
+            ) : (
+              <span className="flex items-center gap-2 text-gray-800">
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    authenticating ? 'animate-pulse bg-amber-500' : 'bg-green-500'
+                  }`}
+                />
+                {authenticating ? 'Signing in…' : (hederaAccountId ?? 'Connected')}
+              </span>
+            )}
+          </button>
         </div>
       </nav>
     </header>

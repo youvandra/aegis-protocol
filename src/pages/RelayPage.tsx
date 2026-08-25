@@ -1,11 +1,14 @@
-import React, { useState, useEffect, lazy } from 'react';
+import React, { useCallback, useState, useEffect, lazy } from 'react';
 import { Plus, Send } from 'lucide-react';
 import { RelayItem } from '../types/relay';
 import { useWalletTracking } from '../hooks/useWalletTracking';
 import { relayService } from '../lib/supabase';
-import { AccountId, Client, PrivateKey, TopicCreateTransaction, TopicId, TopicMessageSubmitTransaction } from '@hashgraph/sdk';
-import { parseEther } from 'viem';
-import { useSendTransaction } from 'wagmi';
+import { useAccount, useSendTransaction, useSignTypedData } from 'wagmi';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
+import { hederaTestnet } from '../config/wagmi';
+import { createTopic, submitMessage } from '../lib/hcs';
+import { hbarToWei, resolveEvmAddress } from '../lib/hedera';
+import { errorMessage } from '../utils/errors';
 
 // Dynamic imports
 const AestheticNavbar = lazy(() => import('../components/AestheticNavbar'));
@@ -13,9 +16,22 @@ const RelayTable = lazy(() => import('../components/RelayTable'));
 const CreateRelayModal = lazy(() => import('../components/CreateRelayModal'));
 const Toast = lazy(() => import('../components/Toast'));
 
-// Your account ID and private key from string value
-const MY_ACCOUNT_ID = AccountId.fromString(import.meta.env.VITE_HEDERA_ACCOUNT_ID!);
-const MY_PRIVATE_KEY = PrivateKey.fromStringECDSA(import.meta.env.VITE_HEDERA_PRIVATE_KEY!);
+// EIP-712 payload signed by the receiver when approving a relay.
+const RELAY_APPROVAL_DOMAIN = {
+  name: 'AegisProtocol',
+  version: '1',
+  chainId: hederaTestnet.id,
+} as const;
+
+const RELAY_APPROVAL_TYPES = {
+  RelayApproval: [
+    { name: 'amount', type: 'uint256' },
+    { name: 'topicId', type: 'string' },
+    { name: 'sender', type: 'string' },
+    { name: 'receiver', type: 'string' },
+  ],
+} as const;
+
 const RelayPage: React.FC = () => {
   const { isConnected, hederaAccountId } = useWalletTracking();
   const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
@@ -25,7 +41,10 @@ const RelayPage: React.FC = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
+  const { address } = useAccount();
+  const { open } = useWeb3Modal();
   const { sendTransactionAsync } = useSendTransaction();
+  const { signTypedDataAsync } = useSignTypedData();
 
   // Auto-hide toast after 3 seconds
   useEffect(() => {
@@ -37,18 +56,12 @@ const RelayPage: React.FC = () => {
     }
   }, [showToast]);
 
-  // Load relays when wallet connects
-  useEffect(() => {
-    if (isConnected && hederaAccountId) {
-      loadRelays();
-    } else {
+  const loadRelays = useCallback(async () => {
+    if (!isConnected || !hederaAccountId) {
       setRelays([]);
+      return;
     }
-  }, [isConnected, hederaAccountId]);
 
-  const loadRelays = async () => {
-    if (!hederaAccountId) return;
-    
     setLoading(true);
     try {
       const relaysData = await relayService.getRelays(hederaAccountId);
@@ -59,7 +72,12 @@ const RelayPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isConnected, hederaAccountId]);
+
+  // Load relays when the wallet connects.
+  useEffect(() => {
+    loadRelays();
+  }, [loadRelays]);
 
   // Filter relays by status for queue vs history
   const queueRelays = relays.filter(relay => 
@@ -88,36 +106,28 @@ const RelayPage: React.FC = () => {
         setShowToast(true);
         return;
       }
-      const client = Client.forTestnet();
-      client.setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
+      // Fails fast on a bad account reference, before anything is paid for.
+      await resolveEvmAddress(receiverAddress);
 
-      const relayTxJson = JSON.stringify({
-        type: "RelayTx",
-        sender_account_id: hederaAccountId,
-        receiver_account_id: receiverAddress,
-        amount: numericAmount,
-      });
-
-      const tx = await new TopicCreateTransaction()
-        .setTopicMemo(relayTxJson)
-        .freezeWith(client)
-        .sign(MY_PRIVATE_KEY);
-      
-      const submitTx = await tx.execute(client);
-      const receipt = await submitTx.getReceipt(client);
-      const topic_id = receipt.topicId!.toString();
+      const { topicId } = await createTopic(
+        JSON.stringify({
+          type: 'RelayTx',
+          sender_account_id: hederaAccountId,
+          receiver_account_id: receiverAddress,
+          amount: numericAmount,
+        })
+      );
 
       const newRelay = await relayService.createRelay(
         hederaAccountId,
         receiverAddress,
         numericAmount,
         expiresAt,
-        topic_id,
+        topicId,
       );
 
-
-      
       if (newRelay) {
+        await loadRelays();
         setShowCreateRelayModal(false);
         setToastMessage('Relay created successfully!');
         setToastType('success');
@@ -130,7 +140,9 @@ const RelayPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating relay:', error);
-      setToastMessage('Failed to create relay. Please check your connection and try again.');
+      setToastMessage(
+        errorMessage(error, 'Failed to create relay. Please check your connection and try again.')
+      );
       setToastType('error');
       setShowToast(true);
     }
@@ -138,115 +150,82 @@ const RelayPage: React.FC = () => {
 
   const handleRelayAction = async (relayId: string, action: 'approve' | 'reject' | 'execute' | 'cancel') => {
     if (!hederaAccountId) return;
-    
+
     try {
-      let result = null;
-      const client = Client.forTestnet();
-      client.setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
-      // Fetch relay details to get receiverAddress
-      const relayDetails = relays.find(r => r.id === relayId);
-      if (!relayDetails || !relayDetails.receiver_address) {
+      const relayDetails = relays.find((relay) => relay.id === relayId);
+      if (!relayDetails?.receiver_address) {
         throw new Error('Receiver address not found for this relay.');
       }
-      const senderAddress = relayDetails.sender_address;
-      const receiverAddress = relayDetails.receiver_address;
-      const amount = relayDetails.amount;
-      const topicId = relayDetails.topic_id!;
 
+      const { sender_address: senderAddress, receiver_address: receiverAddress, amount } = relayDetails;
+      let result = null;
 
-      const getAccountByIdParams = {
-        idOrAliasOrEvmAddress: receiverAddress,       //Fill in the account ID or alias or EVM address
-         limit: 1,                              //Fill in the number of transactions to return
-         order: "desc",                          //Fill the result ordering
-       };
-          
-          //Get account by ID/alias/EVM address
-      const getAccountByIdResponse = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/accounts/${getAccountByIdParams.idOrAliasOrEvmAddress}?limit=${getAccountByIdParams.limit}&order=${getAccountByIdParams.order}`
-      );
-      const getAccountByIdResponseJson = await getAccountByIdResponse.json();
-
-      const address = getAccountByIdResponseJson.evm_address; // Use the account ID from the response
-      
       switch (action) {
-        case 'approve':
-            const domain = {
-              name: "AegisProtocol",
-              version: "1",
-              chainId: 296,
-            };
+        case 'approve': {
+          const topicId = relayDetails.topic_id;
+          if (!topicId) {
+            throw new Error('This relay has no consensus topic to record approval on.');
+          }
 
-            const types = {
-              EIP712Domain: [
-                { name: "name", type: "string" },
-                { name: "version", type: "string" },
-                { name: "chainId", type: "uint256" },
-              ],
-              RelayApproval: [
-                { name: "type", type: "string" },
-                { name: "amount", type: "uint256" },
-                { name: "topicId", type: "string" },
-                { name: "sender", type: "string" },
-                { name: "receiver", type: "string" },
-              ],
-            };
-
-            const value = {
-              type: "EIP712Domain",
-              amount: amount,
-              topicId: topicId,
+          // `amount` is HBAR; the signed field is uint256, so it must be an
+          // integer — sign the weibar value, not the decimal.
+          const signature = await signTypedDataAsync({
+            domain: RELAY_APPROVAL_DOMAIN,
+            types: RELAY_APPROVAL_TYPES,
+            primaryType: 'RelayApproval',
+            message: {
+              amount: hbarToWei(amount),
+              topicId,
               sender: senderAddress,
               receiver: receiverAddress,
-            };
+            },
+          });
 
-            const signature = await window.ethereum.request({
-              method: "eth_signTypedData_v4",
-              params: [
-                window.ethereum.selectedAddress,
-                JSON.stringify({
-                  domain,
-                  types,
-                  primaryType: "RelayApproval",
-                  message: value,
-                }),
-              ],
-            });
-
-            const approvalMessage = JSON.stringify({
+          await submitMessage(
+            topicId,
+            JSON.stringify({
               sign_data: signature,
-              sign_type: "EIP712Domain",
-              status: "Approve",
+              sign_type: 'EIP712',
+              status: 'Approve',
               signer_account_id: receiverAddress,
               signer_evm_address: address,
               sign_date: new Date().toISOString(),
-            });
-
-            const txTopicMessageSubmit = new TopicMessageSubmitTransaction()
-            .setTopicId(TopicId.fromString(topicId))
-            .setMessage(approvalMessage);
-          await txTopicMessageSubmit.execute(client);
+            })
+          );
 
           result = await relayService.approveRelay(relayId, hederaAccountId);
           break;
-        case 'reject':
-          result = await relayService.rejectRelay(relayId, hederaAccountId);
-          break;
-        case 'execute':
-          try {
-
-              const value = parseEther(amount.toString());
-              const hash = await sendTransactionAsync({ to: address, value });
-              result = await relayService.executeRelay(relayId, hederaAccountId, hash);
-            } catch (err) {
-              console.error("Gagal mengirim transaksi:", err);
-            }
-            break;
-          case 'cancel':
-            result = await relayService.cancelRelay(relayId, hederaAccountId);
-            break;
         }
 
+        case 'reject': {
+          result = await relayService.rejectRelay(relayId, hederaAccountId);
+          break;
+        }
+
+        case 'execute': {
+          if (relayDetails.status !== "Waiting for Sender to Execute") {
+            throw new Error('This relay is not ready to be executed yet.');
+          }
+
+          // Funds go straight to the receiver, never through the protocol.
+          const receiverEvmAddress = await resolveEvmAddress(receiverAddress);
+          const hash = await sendTransactionAsync({
+            to: receiverEvmAddress,
+            value: hbarToWei(amount),
+          });
+
+          result = await relayService.executeRelay(relayId, hederaAccountId, hash);
+          break;
+        }
+
+        case 'cancel': {
+          result = await relayService.cancelRelay(relayId, hederaAccountId);
+          break;
+        }
+      }
+
       if (result) {
+        await loadRelays();
         setToastMessage(`Relay ${action}d successfully!`);
         setToastType('success');
         setShowToast(true);
@@ -257,7 +236,7 @@ const RelayPage: React.FC = () => {
       }
     } catch (error) {
       console.error(`Error ${action}ing relay:`, error);
-      setToastMessage(`Failed to ${action} relay. Please try again.`);
+      setToastMessage(errorMessage(error, `Failed to ${action} relay. Please try again.`));
       setToastType('error');
       setShowToast(true);
     }

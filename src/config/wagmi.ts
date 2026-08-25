@@ -8,7 +8,9 @@ export const hederaTestnet: Chain = {
   nativeCurrency: {
     name: 'HBAR',
     symbol: 'HBAR',
-    decimals: 8,
+    // Hedera's JSON-RPC relay reports value in weibar (18 decimals), not
+    // tinybar. Declaring 8 here made every balance read 10^10 too large.
+    decimals: 18,
   },
   rpcUrls: {
     default: {
@@ -23,7 +25,11 @@ export const hederaTestnet: Chain = {
   },
 }
 
-export const projectId = 'dd6934ed03aeebf4d1a21fb001d7c1f3'
+export const projectId = import.meta.env.VITE_WAGMI_PROJECT_ID as string
+
+if (!projectId) {
+  throw new Error('Missing VITE_WAGMI_PROJECT_ID environment variable')
+}
 
 const metadata = {
   name: 'Aegis Protocol',

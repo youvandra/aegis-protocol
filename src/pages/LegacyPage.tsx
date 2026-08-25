@@ -1,7 +1,8 @@
-import { useState, useEffect, lazy } from 'react';
+import { useState, useEffect, useCallback, lazy } from 'react';
 import { Shield, Clock, HeartPulse } from 'lucide-react';
 import { useChainId } from 'wagmi';
 import { useWalletTracking } from '../hooks/useWalletTracking';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
 import { legacyService, walletAccountService } from '../lib/supabase';
@@ -18,6 +19,7 @@ const ConfirmationDialog = lazy(() => import('../components/ConfirmationDialog')
 
 const LegacyPage: React.FC = () => {
   const { isConnected, hederaAccountId } = useWalletTracking();
+  const { open } = useWeb3Modal();
   const chainId = useChainId();
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [legacyMoment, setLegacyMoment] = useState<LegacyMoment | null>(null);
@@ -40,18 +42,6 @@ const LegacyPage: React.FC = () => {
 
   // Calculate current total percentage
   const currentTotalPercentage = beneficiaries.reduce((sum, beneficiary) => sum + beneficiary.percentage, 0);
-
-  // Load legacy plan and beneficiaries when wallet connects
-  useEffect(() => {
-    if (isConnected && hederaAccountId) {
-      loadLegacyData();
-    } else {
-      // Reset data when wallet disconnects
-      setBeneficiaries([]);
-      setLegacyMoment(null);
-      setLegacyPlanId(null);
-    }
-  }, [isConnected, hederaAccountId]);
 
   // Auto-hide toast after 3 seconds
   useEffect(() => {
@@ -83,9 +73,15 @@ const LegacyPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [lastConnectedAt]);
 
-  const loadLegacyData = async () => {
-    if (!hederaAccountId) return;
-    
+  const loadLegacyData = useCallback(async () => {
+    if (!isConnected || !hederaAccountId) {
+      // Reset data when the wallet disconnects.
+      setBeneficiaries([]);
+      setLegacyMoment(null);
+      setLegacyPlanId(null);
+      return;
+    }
+
     setLoading(true);
     try {
       
@@ -114,7 +110,13 @@ const LegacyPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isConnected, hederaAccountId]);
+
+  // Load legacy plan and beneficiaries when wallet connects
+  useEffect(() => {
+    loadLegacyData();
+  }, [loadLegacyData]);
+
 
   const handleAddBeneficiary = async (beneficiaryData: Omit<Beneficiary, 'id'>) => {
     if (!hederaAccountId) return;

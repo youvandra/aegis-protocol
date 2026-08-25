@@ -5,8 +5,21 @@ Aegis Protocol is building the essential trust and asset management layer for th
 ## Features
 
 - **Stream**: Automate asset transfers with precise timing and logic, allowing users to stream wealth to designated recipients.
-- **Legacy**: Create trustless legacy plans that activate based on predefined conditions (e.g., inactivity), ensuring permanent asset distribution without intermediaries.
-- **Relay**: Facilitate synchronized smart transfers between parties, enabling secure and agreed-upon transactions without a middleman.
+- **Legacy**: Record a legacy plan that activates on predefined conditions (e.g. inactivity) and describes how assets should be distributed.
+- **Relay**: Facilitate synchronized smart transfers between parties — the sender pays the receiver directly, wallet to wallet.
+
+### What is and is not on-chain today
+
+This repository ships a web client, a Supabase database and two Supabase edge
+functions. There are no smart contracts. Read that as:
+
+- **Relay** settles peer-to-peer: the sender's wallet transfers HBAR straight to
+  the receiver's EVM address. Approval is signed as EIP-712 and recorded on the
+  Hedera Consensus Service.
+- **Stream** is **custodial**. Scheduling a group transfers the group's total to
+  the account in `VITE_HEDERA_ACCOUNT_ID`, and payout to members happens off
+  this repository. Members rely on the protocol operator, not on code.
+- **Legacy** holds no funds at all — a plan is database state plus an HCS record.
 
 ## Technologies Used
 
@@ -52,21 +65,25 @@ yarn install
 
 ### 3. Environment Variables Setup
 
-This project uses Supabase for its backend and Wagmi/Web3Modal for wallet integration, which require environment variables.
+Copy `.env.example` to `.env` and fill it in:
 
-Create a `.env` file in the root of your project directory (if it doesn't already exist) and add the following variables:
-
-```
-VITE_SUPABASE_URL="YOUR_SUPABASE_URL"
-VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
-VITE_WAGMI_PROJECT_ID="YOUR_WAGMI_PROJECT_ID"
+```bash
+cp .env.example .env
 ```
 
-- **`VITE_SUPABASE_URL`**: Your Supabase project URL. You can find this in your Supabase project settings under `API -> Project URL`.
-- **`VITE_SUPABASE_ANON_KEY`**: Your Supabase public `anon` key. You can find this in your Supabase project settings under `API -> Project API keys`.
-- **`VITE_WAGMI_PROJECT_ID`**: Your WalletConnect Cloud Project ID. You can obtain this from [WalletConnect Cloud](https://cloud.walletconnect.com/).
+| Variable | Where to find it |
+| --- | --- |
+| `VITE_SUPABASE_URL` | Supabase project settings, `API -> Project URL` |
+| `VITE_SUPABASE_ANON_KEY` | Supabase project settings, `API -> Project API keys` |
+| `VITE_WAGMI_PROJECT_ID` | [WalletConnect Cloud](https://cloud.walletconnect.com/) |
+| `VITE_HEDERA_ACCOUNT_ID` | The Hedera account that receives scheduled stream deposits |
+| `VITE_HEDERA_MIRROR_NODE_URL` | Optional; defaults to the public testnet mirror node |
 
-**Important**: Do not commit your `.env` file to version control. It is already included in `.gitignore`.
+**Never put a private key in a `VITE_` variable.** Vite inlines every `VITE_`
+value into the JavaScript it serves, so anything named that way is readable by
+any visitor. The Hedera operator key belongs in the edge function secrets below.
+
+`.env` is gitignored; `.env.example` is the template that is committed.
 
 ### 4. Database Setup (Supabase)
 
@@ -86,6 +103,30 @@ This project relies on a Supabase PostgreSQL database. The schema is defined by 
    ```
 
    Replace `YOUR_SUPABASE_PROJECT_REF` with your actual Supabase project reference (found in your project URL or settings).
+
+### 4b. Edge Functions (required)
+
+Two functions hold everything that must not run in a browser. Deploy them and
+set their secrets **before** applying the `verified_wallet_rls` migration —
+afterwards the database only trusts callers holding a signed session.
+
+```bash
+supabase functions deploy hcs wallet-auth
+```
+
+```bash
+supabase secrets set HEDERA_ACCOUNT_ID="0.0.YOUR_ACCOUNT" HEDERA_PRIVATE_KEY="YOUR_ECDSA_KEY" HEDERA_NETWORK="testnet"
+```
+
+- **`hcs`** — creates Hedera Consensus Service topics and submits messages. It
+  is the only place the operator key exists.
+- **`wallet-auth`** — issues a single-use nonce, verifies the wallet's signature
+  over it, resolves the Hedera account ID from the mirror node, and mints a
+  short-lived JWT whose `wallet_address` claim the RLS policies key on.
+  `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_JWT_SECRET` are
+  injected automatically.
+
+Set `ALLOWED_ORIGIN` to your deployed origin to restrict CORS beyond `*`.
 
 ### 5. Run the Development Server
 
@@ -115,13 +156,20 @@ This command compiles the application into the `dist` directory, ready for deplo
 
 ```
 src/
-├── components/          # Reusable UI components
+├── components/         # Reusable UI components
 ├── config/             # Configuration files (Wagmi, etc.)
+├── context/            # WalletSessionProvider — one wallet session per app
 ├── hooks/              # Custom React hooks
-├── lib/                # Utility libraries (Supabase client)
+├── lib/                # Supabase client, wallet auth, Hedera + HCS helpers
 ├── pages/              # Page components
 ├── types/              # TypeScript type definitions
-└── main.tsx           # Application entry point
+├── utils/              # Time and error formatting helpers
+└── main.tsx            # Application entry point
+
+supabase/
+├── functions/hcs/          # Hedera Consensus Service gateway (holds operator key)
+├── functions/wallet-auth/  # Nonce + signature verification, mints session JWTs
+└── migrations/             # Database schema and RLS policies
 ```
 
 ## Key Components
@@ -150,6 +198,25 @@ The application uses the following main tables:
 - **legacy_plans**: Legacy plan configurations
 - **beneficiaries**: Legacy plan beneficiaries
 - **relays**: Relay transaction records
+- **auth_nonces**: Single-use sign-in challenges (service role only)
+
+## Security Model
+
+- **Authentication.** On connect, the wallet signs a single-use nonce. The
+  `wallet-auth` function verifies the signature and returns a JWT; that token is
+  attached to every PostgREST request. Row Level Security reads the wallet from
+  `auth.jwt() ->> 'wallet_address'`, a claim the database validated itself.
+- **Why this replaced the old scheme.** Policies used to trust an
+  `X-Wallet-Address` request header the browser set on its own, so any caller
+  could read or write another wallet's rows with a single `curl`. The
+  `20260826090000_verified_wallet_rls` migration drops every such policy, along
+  with the leftover `USING (true)` policies that silently overrode the strict
+  ones.
+- **Key custody.** The Hedera operator key lives only in edge function secrets.
+  If it was ever shipped in a `VITE_` variable, treat it as compromised and
+  rotate the account.
+- **Session lifetime.** Tokens last one hour and are held in memory only, so
+  closing the tab ends the session.
 
 ## Contributing
 

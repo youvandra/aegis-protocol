@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage';
 import StreamPage from './pages/StreamPage';
 import LegacyPage from './pages/LegacyPage';
 import RelayPage from './pages/RelayPage';
+import { WalletSessionProvider } from './context/WalletSessionProvider';
 
 function App() {
   return (
@@ -14,14 +15,16 @@ function App() {
       
       {/* Content Layer */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/stream" element={<StreamPage />} />
-            <Route path="/legacy" element={<LegacyPage />} />
-            <Route path="/relay" element={<RelayPage />} />
-          </Routes>
-        </BrowserRouter>
+        <WalletSessionProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/stream" element={<StreamPage />} />
+              <Route path="/legacy" element={<LegacyPage />} />
+              <Route path="/relay" element={<RelayPage />} />
+            </Routes>
+          </BrowserRouter>
+        </WalletSessionProvider>
       </div>
     </div>
   );

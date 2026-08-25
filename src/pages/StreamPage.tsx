@@ -1,4 +1,4 @@
-import React, { useEffect, useState, lazy } from 'react';
+import React, { useCallback, useEffect, useState, lazy } from 'react';
 import { Wallet, Plus, UserPlus } from 'lucide-react';
 const AestheticNavbar = lazy(() => import('../components/AestheticNavbar'));
 const StreamTable = lazy(() => import('../components/StreamTable'));
@@ -7,20 +7,17 @@ const AddMemberModal = lazy(() => import('../components/AddMemberModal'));
 const Toast = lazy(() => import('../components/Toast'));
 import { Group } from '../types/stream';
 import { useWalletTracking } from '../hooks/useWalletTracking';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { streamService } from '../lib/supabase';
-import { Client, TopicCreateTransaction, PrivateKey, AccountId, TopicMessageSubmitTransaction } from "@hashgraph/sdk";
-import { parseEther } from 'viem';
 import { useSendTransaction } from 'wagmi';
-// Heder testnet client setup
-let client;
-const MY_ACCOUNT_ID = AccountId.fromString(import.meta.env.VITE_HEDERA_ACCOUNT_ID!);
-const MY_PRIVATE_KEY = PrivateKey.fromStringECDSA(import.meta.env.VITE_HEDERA_PRIVATE_KEY!);
-client = Client.forTestnet();
-client.setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
+import { createTopic, submitMessage } from '../lib/hcs';
+import { resolveEvmAddress, sumHbarToWei, treasuryAccountId } from '../lib/hedera';
+import { errorMessage } from '../utils/errors';
 
 
 const StreamPage: React.FC = () => {
   const { isConnected, hederaAccountId } = useWalletTracking();
+  const { open } = useWeb3Modal();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'released'>('upcoming');
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +37,16 @@ const StreamPage: React.FC = () => {
     }
   }, [showToast]);
 
-  const loadGroups = async () => {
+  const loadGroups = useCallback(async () => {
+    if (!hederaAccountId) {
+      setGroups([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const groupsData = await streamService.getGroups(hederaAccountId || '');
+      const groupsData = await streamService.getGroups(hederaAccountId);
       setGroups(groupsData);
     } catch (error) {
       console.error('Error loading groups:', error);
@@ -51,11 +54,11 @@ const StreamPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [hederaAccountId]);
 
   useEffect(() => {
     loadGroups();
-  }, [hederaAccountId]);
+  }, [loadGroups]);
 
   const upcomingGroups = groups.filter(group => group.status === 'upcoming');
   const releasedGroups = groups.filter(group => group.status === 'released');
@@ -66,30 +69,30 @@ const StreamPage: React.FC = () => {
   }) => {
     if (!hederaAccountId) return;
     
+    if (!groupData.releaseDateTime) {
+      setToastMessage('A release date and time is required.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
     try {
-      const tx = await new TopicCreateTransaction()
-        .setTopicMemo(JSON.stringify({
+      const { topicId, transactionId } = await createTopic(
+        JSON.stringify({
           group: groupData.groupName,
           releaseDateTime: groupData.releaseDateTime,
-        })
-       ).setTransactionMemo(`Create group: ${groupData.groupName} by ${hederaAccountId}`)
-        .freezeWith(client)
-        .sign(MY_PRIVATE_KEY);
-
-      const submitTx = await tx.execute(client);
-      const receipt = await submitTx.getReceipt(client);
-      const topicId = receipt.topicId!.toString();
-      const txid = submitTx.transactionId!.toString();
+        }),
+        `Create group: ${groupData.groupName} by ${hederaAccountId}`
+      );
 
       const newGroup = await streamService.createGroup(
         topicId,
-        txid,
+        transactionId,
         groupData.groupName,
         hederaAccountId,
-        groupData.releaseDateTime!
+        groupData.releaseDateTime
       );
-      
-      
+
       if (newGroup) {
         await loadGroups();
         setShowCreateGroupModal(false);
@@ -102,7 +105,7 @@ const StreamPage: React.FC = () => {
         setShowToast(true);
       }
     } catch (error) {
-      setToastMessage('Failed to create group. Please try again.');
+      setToastMessage(errorMessage(error, 'Failed to create group. Please try again.'));
       setToastType('error');
       setShowToast(true);
     }
@@ -124,28 +127,33 @@ const StreamPage: React.FC = () => {
       return;
     }
 
+    const amount = Number(memberData.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setToastMessage('Amount must be a positive number.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
     try {
       const newMember = await streamService.addMemberToGroup(
         memberData.topicId,
         memberData.groupId,
         memberData.name,
         memberData.address,
-        Number(memberData.amount)
+        amount
       );
 
-      const tx = new TopicMessageSubmitTransaction()
-        .setTopicId(memberData.topicId)
-        .setMessage(JSON.stringify({
-          type: "add member",
+      await submitMessage(
+        memberData.topicId,
+        JSON.stringify({
+          type: 'add member',
           name: memberData.name,
           address: memberData.address,
-          amount: memberData.amount + " HBAR"
-            })
-        );
+          amount: `${memberData.amount} HBAR`,
+        })
+      );
 
-      const submitTx = await tx.execute(client);
-      await submitTx.getReceipt(client);
-      
       if (newMember) {
         await loadGroups();
         setShowAddMemberModal(false);
@@ -158,7 +166,7 @@ const StreamPage: React.FC = () => {
         setShowToast(true);
       }
     } catch (error) {
-      setToastMessage('Failed to add member. Please try again.');
+      setToastMessage(errorMessage(error, 'Failed to add member. Please try again.'));
       setToastType('error');
       setShowToast(true);
     }
@@ -169,8 +177,9 @@ const StreamPage: React.FC = () => {
     
     try {
       const success = await streamService.deleteGroup(groupId, hederaAccountId);
-      
+
       if (success) {
+        await loadGroups();
         setToastMessage('Group deleted successfully!');
         setToastType('success');
         setShowToast(true);
@@ -180,7 +189,7 @@ const StreamPage: React.FC = () => {
         setShowToast(true);
       }
     } catch (error) {
-      setToastMessage('Failed to delete group. Please try again.');
+      setToastMessage(errorMessage(error, 'Failed to delete group. Please try again.'));
       setToastType('error');
       setShowToast(true);
     }
@@ -189,27 +198,27 @@ const StreamPage: React.FC = () => {
   const handleScheduleGroup = async (groupId: string) => {
     if (!hederaAccountId) return;
     
+    const group = groups.find((candidate) => candidate.id === groupId);
+
+    if (!group?.members?.length) {
+      setToastMessage('Add at least one member before scheduling.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
     try {
-      const getAccountByIdParams = {
-          idOrAliasOrEvmAddress: import.meta.env.VITE_HEDERA_ACCOUNT_ID,
-          limit: 1,
-          order: "desc",
-        };
+      // Sum member allocations exactly, in weibar. Going through BigInt() on a
+      // float total used to throw on any fractional amount.
+      const value = sumHbarToWei(group.members.map((member) => member.amount));
 
-        //Get account by ID/alias/EVM address
-        const getAccountByIdResponse = await fetch(
-          `https://testnet.mirrornode.hedera.com/api/v1/accounts/${getAccountByIdParams.idOrAliasOrEvmAddress}?limit=${getAccountByIdParams.limit}&order=${getAccountByIdParams.order}`
-        );
-        const getAccountByIdResponseJson = await getAccountByIdResponse.json();
+      if (value <= 0n) {
+        throw new Error('Total allocation must be greater than zero.');
+      }
 
-      const address = getAccountByIdResponseJson.evm_address;
-      // Calculate total_amount from group members
-      const group = groups.find(g => g.id === groupId);
-      const total_amount = group
-        ? group.members?.reduce((sum, member) => sum + Number(member.amount || 0), 0)
-        : 0;
-      const value = BigInt(total_amount);
-      await sendTransactionAsync({ to: address, value: parseEther(value.toString()) });
+      const treasuryAddress = await resolveEvmAddress(treasuryAccountId);
+      await sendTransactionAsync({ to: treasuryAddress, value });
+
       const scheduledGroup = await streamService.scheduledGroup(groupId, hederaAccountId);
 
       if (scheduledGroup) {
@@ -223,7 +232,7 @@ const StreamPage: React.FC = () => {
         setShowToast(true);
       }
     } catch (error) {
-      setToastMessage('Failed to release group. Please try again.');
+      setToastMessage(errorMessage(error, 'Failed to release group. Please try again.'));
       setToastType('error');
       setShowToast(true);
     }

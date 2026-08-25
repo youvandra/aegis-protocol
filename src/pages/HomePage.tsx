@@ -1,10 +1,10 @@
 import React from 'react';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
-import { useWalletTracking } from '../hooks/useWalletTracking';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
 
 const HomePage: React.FC = () => {
-  const { isConnected } = useWalletTracking();
+  const { open } = useWeb3Modal();
 
   const handleWalletRequired = () => {
     open();
@@ -12,7 +12,7 @@ const HomePage: React.FC = () => {
 
   return (
     <>
-      <Header isConnected={isConnected} onWalletRequired={handleWalletRequired} />
+      <Header onWalletRequired={handleWalletRequired} />
       <div className="flex-1">
         <Hero />
       </div>
