@@ -1,0 +1,14 @@
+# Replicates the SQLite file offsite. Point `url` at any S3-compatible bucket.
+#
+# Restore into a fresh volume with:
+#   litestream restore -o /data/aegis.db s3://YOUR-BUCKET/aegis
+dbs:
+  - path: /data/aegis.db
+    replicas:
+      - type: s3
+        bucket: YOUR-BUCKET
+        path: aegis
+        region: auto
+        endpoint: YOUR-S3-ENDPOINT
+        retention: 720h
+        snapshot-interval: 12h

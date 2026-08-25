@@ -1,48 +1,33 @@
 import type { SignMessageMutateAsync } from 'wagmi/query';
-import { setWalletSession, clearWalletSession } from './supabase';
-import { invokeFunction } from './functions';
-
-interface NonceResponse {
-  nonce: string;
-  message: string;
-}
-
-interface VerifyResponse {
-  token: string;
-  expiresAt: number;
-  walletAddress: string;
-}
-
-const invoke = <T>(body: Record<string, unknown>): Promise<T> =>
-  invokeFunction<T>('wallet-auth', body);
+import { authApi, setSessionToken } from './api';
 
 /**
- * Prove ownership of the connected wallet and start a scoped session.
+ * Prove ownership of the connected wallet and open a session.
  *
- * The returned token is a Supabase-signed JWT whose `wallet_address` claim is
- * resolved server-side from the signature, so RLS can trust it in a way it
- * could never trust a client-set header.
+ * The server resolves the Hedera account ID from the verified signature, so the
+ * client never gets to choose which account its session speaks for.
  */
 export const signIn = async (
   address: `0x${string}`,
   signMessageAsync: SignMessageMutateAsync<unknown>
 ): Promise<string> => {
-  const { nonce, message } = await invoke<NonceResponse>({ action: 'nonce', address });
+  const { nonce, message } = await authApi.requestNonce(address);
 
   const signature = await signMessageAsync({ message });
 
-  const session = await invoke<VerifyResponse>({
-    action: 'verify',
-    address,
-    nonce,
-    signature,
-  });
+  const session = await authApi.verifySignature(address, nonce, signature);
 
-  setWalletSession(session.token, session.walletAddress, session.expiresAt);
+  setSessionToken(session.token);
 
   return session.walletAddress;
 };
 
-export const signOut = () => {
-  clearWalletSession();
+export const signOut = async () => {
+  try {
+    await authApi.signOut();
+  } catch (error) {
+    console.error('Failed to revoke session:', error);
+  } finally {
+    setSessionToken(null);
+  }
 };

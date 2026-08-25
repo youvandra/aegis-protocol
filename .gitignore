@@ -31,3 +31,5 @@ dist-ssr
 supabase/.temp
 
 *.tsbuildinfo
+
+data/

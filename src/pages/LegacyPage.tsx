@@ -5,7 +5,8 @@ import { useWalletTracking } from '../hooks/useWalletTracking';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { Beneficiary } from '../types/beneficiary';
 import { LegacyMoment } from '../types/legacyMoment';
-import { legacyService, walletAccountService } from '../lib/supabase';
+import { legacyService, walletAccountService } from '../lib/api';
+import { errorMessage } from '../utils/errors';
 import { formatDuration } from '../utils/time';
 
 // Dynamic imports
@@ -86,7 +87,7 @@ const LegacyPage: React.FC = () => {
     try {
       
       // Load legacy plan
-      const legacyPlan = await legacyService.getLegacyPlan(hederaAccountId);
+      const legacyPlan = await legacyService.getLegacyPlan();
       if (legacyPlan) {
         setLegacyPlanId(legacyPlan.id);
         setLegacyMoment({
@@ -96,12 +97,12 @@ const LegacyPage: React.FC = () => {
         });
         
         // Load beneficiaries for this plan
-        const beneficiariesData = await legacyService.getBeneficiaries(legacyPlan.id);
+        const beneficiariesData = await legacyService.getBeneficiaries();
         setBeneficiaries(beneficiariesData);
       }
 
       // Load user's last connected timestamp
-      const userData = await walletAccountService.getWalletAccount(hederaAccountId);
+      const userData = await walletAccountService.getCurrentUser();
       if (userData) {
         setLastConnectedAt(userData.last_connected_at);
       }
@@ -144,34 +145,22 @@ const LegacyPage: React.FC = () => {
           label: 'Activate if inactive for 6 months'
         };
         
-        const newPlan = await legacyService.createOrUpdateLegacyPlan(hederaAccountId, defaultMoment);
-        if (!newPlan) {
-          setToastMessage('Failed to create legacy plan. Please try again.');
-          setToastType('error');
-          setShowToast(true);
-          return;
-        }
-        
+        const newPlan = await legacyService.saveLegacyPlan(defaultMoment);
+
         currentLegacyPlanId = newPlan.id;
         setLegacyPlanId(currentLegacyPlanId);
         setLegacyMoment(defaultMoment);
       }
       
       // Add beneficiary to the plan
-      const newBeneficiary = await legacyService.addBeneficiary(currentLegacyPlanId, beneficiaryData);
-      if (newBeneficiary) {
-        setBeneficiaries(prev => [...prev, newBeneficiary]);
-        setToastMessage('Beneficiary added successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage('Failed to add beneficiary. Please try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      const newBeneficiary = await legacyService.addBeneficiary(beneficiaryData);
+      setBeneficiaries(prev => [...prev, newBeneficiary]);
+      setToastMessage('Beneficiary added successfully!');
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       console.error('Error adding beneficiary:', error);
-      setToastMessage('Failed to add beneficiary. Please try again.');
+      setToastMessage(errorMessage(error, 'Failed to add beneficiary. Please try again.'));
       setToastType('error');
       setShowToast(true);
     }
@@ -188,23 +177,18 @@ const LegacyPage: React.FC = () => {
     if (!hederaAccountId || !pendingMomentConfig) return;
     
     try {
-      const updatedPlan = await legacyService.createOrUpdateLegacyPlan(hederaAccountId, pendingMomentConfig);
-      if (updatedPlan) {
-        setLegacyMoment(pendingMomentConfig);
-        setLegacyPlanId(updatedPlan.id);
-        setShowMomentConfirmation(false);
-        setPendingMomentConfig(null);
-        setToastMessage('Activation moment set successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage('Failed to set moment. Please try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      const updatedPlan = await legacyService.saveLegacyPlan(pendingMomentConfig);
+
+      setLegacyMoment(pendingMomentConfig);
+      setLegacyPlanId(updatedPlan.id);
+      setShowMomentConfirmation(false);
+      setPendingMomentConfig(null);
+      setToastMessage('Activation moment set successfully!');
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       console.error('Error setting moment:', error);
-      setToastMessage('Failed to set moment. Please try again.');
+      setToastMessage(errorMessage(error, 'Failed to set moment. Please try again.'));
       setToastType('error');
       setShowToast(true);
     }
@@ -234,22 +218,16 @@ const LegacyPage: React.FC = () => {
     
     try {
       const updatedBeneficiary = await legacyService.updateBeneficiary(beneficiaryId, beneficiaryData);
-      if (updatedBeneficiary) {
-        setBeneficiaries(prev => 
-          prev.map(b => b.id === beneficiaryId ? updatedBeneficiary : b)
-        );
-        handleCloseEditBeneficiaryModal();
-        setToastMessage('Beneficiary updated successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage('Failed to update beneficiary. Please try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      setBeneficiaries(prev =>
+        prev.map(b => (b.id === beneficiaryId ? updatedBeneficiary : b))
+      );
+      handleCloseEditBeneficiaryModal();
+      setToastMessage('Beneficiary updated successfully!');
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       console.error('Error updating beneficiary:', error);
-      setToastMessage('Failed to update beneficiary. Please try again.');
+      setToastMessage(errorMessage(error, 'Failed to update beneficiary. Please try again.'));
       setToastType('error');
       setShowToast(true);
     }
@@ -267,22 +245,16 @@ const LegacyPage: React.FC = () => {
     if (!hederaAccountId || !pendingDeleteBeneficiaryId) return;
     
     try {
-      const success = await legacyService.deleteBeneficiary(pendingDeleteBeneficiaryId);
-      if (success) {
-        setBeneficiaries(prev => prev.filter(b => b.id !== pendingDeleteBeneficiaryId));
-        setShowDeleteConfirmation(false);
-        setPendingDeleteBeneficiaryId(null);
-        setToastMessage('Beneficiary deleted successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage('Failed to delete beneficiary. Please try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      await legacyService.deleteBeneficiary(pendingDeleteBeneficiaryId);
+      setBeneficiaries(prev => prev.filter(b => b.id !== pendingDeleteBeneficiaryId));
+      setShowDeleteConfirmation(false);
+      setPendingDeleteBeneficiaryId(null);
+      setToastMessage('Beneficiary deleted successfully!');
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       console.error('Error deleting beneficiary:', error);
-      setToastMessage('Failed to delete beneficiary. Please try again.');
+      setToastMessage(errorMessage(error, 'Failed to delete beneficiary. Please try again.'));
       setToastType('error');
       setShowToast(true);
     }
@@ -302,22 +274,16 @@ const LegacyPage: React.FC = () => {
     
     setHeartbeatLoading(true);
     try {
-      const updatedUser = await walletAccountService.upsertWalletAccount(hederaAccountId, chainId);
-      
-      if (updatedUser) {
-        setLastConnectedAt(updatedUser.last_connected_at);
-        setShowHeartbeatConfirmation(false);
-        setToastMessage('Activity refreshed successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage('Failed to refresh activity. Please try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      const updatedUser = await walletAccountService.recordConnection(chainId);
+
+      setLastConnectedAt(updatedUser.last_connected_at);
+      setShowHeartbeatConfirmation(false);
+      setToastMessage('Activity refreshed successfully!');
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       console.error('Error refreshing heartbeat:', error);
-      setToastMessage('Failed to refresh activity. Please try again.');
+      setToastMessage(errorMessage(error, 'Failed to refresh activity. Please try again.'));
       setToastType('error');
       setShowToast(true);
     } finally {

@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "npm --prefix server run dev",
     "build": "tsc -b && vite build",
+    "build:server": "npm --prefix server run build",
+    "build:all": "npm run build && npm run build:server",
+    "start": "npm --prefix server run start",
     "lint": "eslint .",
-    "preview": "vite preview",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.53.0",
     "@tanstack/react-query": "^5.83.1",
     "@web3modal/wagmi": "^5.1.11",
     "lucide-react": "^0.344.0",
@@ -32,7 +34,6 @@
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
     "postcss": "^8.4.35",
-    "supabase": "^2.33.9",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",

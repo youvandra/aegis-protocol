@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAccount, useChainId, useSignMessage } from 'wagmi';
-import { walletAccountService, clearWalletSession } from '../lib/supabase';
-import { signIn } from '../lib/walletAuth';
+import { walletAccountService, setSessionToken } from '../lib/api';
+import { signIn, signOut } from '../lib/walletAuth';
 import { WalletSessionContext } from './walletSessionContext';
 
 /**
@@ -42,15 +42,15 @@ export const WalletSessionProvider: React.FC<{ children: React.ReactNode }> = ({
       setHederaAccountId(resolvedAccountId);
 
       try {
-        await walletAccountService.upsertWalletAccount(resolvedAccountId, chainId);
+        await walletAccountService.recordConnection(chainId);
       } catch (error) {
-        console.error('Failed to save user data to Supabase:', error);
+        console.error('Failed to record the connection:', error);
       }
     } catch (error) {
       console.error('Wallet sign-in failed:', error);
       authenticatedFor.current = null;
       setHederaAccountId(null);
-      clearWalletSession();
+      setSessionToken(null);
       setAuthError(
         error instanceof Error ? error.message : 'Could not sign in with this wallet.'
       );
@@ -70,26 +70,29 @@ export const WalletSessionProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (isConnected) return;
 
-    const previousAccountId = authenticatedFor.current ? hederaAccountId : null;
+    const hadSession = authenticatedFor.current !== null;
     authenticatedFor.current = null;
     setHederaAccountId(null);
     setAuthError(null);
 
-    const markInactive = async () => {
-      if (previousAccountId) {
-        try {
-          await walletAccountService.setUserInactive(previousAccountId);
-        } catch (error) {
-          console.error('Failed to set user inactive:', error);
-        }
+    // Nothing to tear down if this wallet never signed in — on a cold load
+    // that would fire a pointless sign-out on every visit.
+    if (!hadSession) {
+      setSessionToken(null);
+      return;
+    }
+
+    const tearDown = async () => {
+      try {
+        await walletAccountService.markInactive();
+      } catch (error) {
+        console.error('Failed to set user inactive:', error);
       }
-      clearWalletSession();
+
+      await signOut();
     };
 
-    markInactive();
-    // `hederaAccountId` is only read as the last-known value here and is
-    // cleared in the same pass, so depending on it would loop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    tearDown();
   }, [isConnected]);
 
   return (

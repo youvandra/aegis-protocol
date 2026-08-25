@@ -2,12 +2,11 @@ import React, { useCallback, useState, useEffect, lazy } from 'react';
 import { Plus, Send } from 'lucide-react';
 import { RelayItem } from '../types/relay';
 import { useWalletTracking } from '../hooks/useWalletTracking';
-import { relayService } from '../lib/supabase';
+import { relayService, hederaApi } from '../lib/api';
 import { useAccount, useSendTransaction, useSignTypedData } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { hederaTestnet } from '../config/wagmi';
-import { createTopic, submitMessage } from '../lib/hcs';
-import { hbarToWei, resolveEvmAddress } from '../lib/hedera';
+import { hbarToWei } from '../lib/hedera';
 import { errorMessage } from '../utils/errors';
 
 // Dynamic imports
@@ -64,7 +63,7 @@ const RelayPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const relaysData = await relayService.getRelays(hederaAccountId);
+      const relaysData = await relayService.getRelays();
       setRelays(relaysData);
     } catch (error) {
       console.error('Error loading relays:', error);
@@ -107,9 +106,9 @@ const RelayPage: React.FC = () => {
         return;
       }
       // Fails fast on a bad account reference, before anything is paid for.
-      await resolveEvmAddress(receiverAddress);
+      await hederaApi.resolveEvmAddress(receiverAddress);
 
-      const { topicId } = await createTopic(
+      const { topicId } = await hederaApi.createTopic(
         JSON.stringify({
           type: 'RelayTx',
           sender_account_id: hederaAccountId,
@@ -118,26 +117,18 @@ const RelayPage: React.FC = () => {
         })
       );
 
-      const newRelay = await relayService.createRelay(
-        hederaAccountId,
+      const newRelay = await relayService.createRelay({
         receiverAddress,
-        numericAmount,
+        amount: numericAmount,
         expiresAt,
         topicId,
-      );
+      });
 
-      if (newRelay) {
-        await loadRelays();
-        setShowCreateRelayModal(false);
-        setToastMessage('Relay created successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        console.error('Failed to create relay - no data returned');
-        setToastMessage('Failed to create relay. Please check your inputs and try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      await loadRelays();
+      setShowCreateRelayModal(false);
+      setToastMessage(`Relay #${newRelay.relay_number} created successfully!`);
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       console.error('Error creating relay:', error);
       setToastMessage(
@@ -158,7 +149,7 @@ const RelayPage: React.FC = () => {
       }
 
       const { sender_address: senderAddress, receiver_address: receiverAddress, amount } = relayDetails;
-      let result = null;
+      let result: Awaited<ReturnType<typeof relayService.approveRelay>>;
 
       switch (action) {
         case 'approve': {
@@ -181,7 +172,7 @@ const RelayPage: React.FC = () => {
             },
           });
 
-          await submitMessage(
+          await hederaApi.submitMessage(
             topicId,
             JSON.stringify({
               sign_data: signature,
@@ -193,12 +184,12 @@ const RelayPage: React.FC = () => {
             })
           );
 
-          result = await relayService.approveRelay(relayId, hederaAccountId);
+          result = await relayService.approveRelay(relayId);
           break;
         }
 
         case 'reject': {
-          result = await relayService.rejectRelay(relayId, hederaAccountId);
+          result = await relayService.rejectRelay(relayId);
           break;
         }
 
@@ -208,32 +199,26 @@ const RelayPage: React.FC = () => {
           }
 
           // Funds go straight to the receiver, never through the protocol.
-          const receiverEvmAddress = await resolveEvmAddress(receiverAddress);
+          const receiverEvmAddress = await hederaApi.resolveEvmAddress(receiverAddress);
           const hash = await sendTransactionAsync({
             to: receiverEvmAddress,
             value: hbarToWei(amount),
           });
 
-          result = await relayService.executeRelay(relayId, hederaAccountId, hash);
+          result = await relayService.executeRelay(relayId, hash);
           break;
         }
 
         case 'cancel': {
-          result = await relayService.cancelRelay(relayId, hederaAccountId);
+          result = await relayService.cancelRelay(relayId);
           break;
         }
       }
 
-      if (result) {
-        await loadRelays();
-        setToastMessage(`Relay ${action}d successfully!`);
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage(`Failed to ${action} relay. Please try again.`);
-        setToastType('error');
-        setShowToast(true);
-      }
+      await loadRelays();
+      setToastMessage(`Relay #${result.relay_number} ${action}d successfully!`);
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       console.error(`Error ${action}ing relay:`, error);
       setToastMessage(errorMessage(error, `Failed to ${action} relay. Please try again.`));

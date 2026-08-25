@@ -8,10 +8,9 @@ const Toast = lazy(() => import('../components/Toast'));
 import { Group } from '../types/stream';
 import { useWalletTracking } from '../hooks/useWalletTracking';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
-import { streamService } from '../lib/supabase';
+import { streamService, hederaApi } from '../lib/api';
 import { useSendTransaction } from 'wagmi';
-import { createTopic, submitMessage } from '../lib/hcs';
-import { resolveEvmAddress, sumHbarToWei, treasuryAccountId } from '../lib/hedera';
+import { sumHbarToWei, treasuryAccountId } from '../lib/hedera';
 import { errorMessage } from '../utils/errors';
 
 
@@ -46,7 +45,7 @@ const StreamPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const groupsData = await streamService.getGroups(hederaAccountId);
+      const groupsData = await streamService.getGroups();
       setGroups(groupsData);
     } catch (error) {
       console.error('Error loading groups:', error);
@@ -77,7 +76,7 @@ const StreamPage: React.FC = () => {
     }
 
     try {
-      const { topicId, transactionId } = await createTopic(
+      const { topicId, transactionId } = await hederaApi.createTopic(
         JSON.stringify({
           group: groupData.groupName,
           releaseDateTime: groupData.releaseDateTime,
@@ -85,25 +84,18 @@ const StreamPage: React.FC = () => {
         `Create group: ${groupData.groupName} by ${hederaAccountId}`
       );
 
-      const newGroup = await streamService.createGroup(
+      const newGroup = await streamService.createGroup({
+        groupName: groupData.groupName,
+        releaseDateTime: groupData.releaseDateTime,
         topicId,
-        transactionId,
-        groupData.groupName,
-        hederaAccountId,
-        groupData.releaseDateTime
-      );
+        txid: transactionId,
+      });
 
-      if (newGroup) {
-        await loadGroups();
-        setShowCreateGroupModal(false);
-        setToastMessage('Group created successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage('Failed to create group. Please try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      await loadGroups();
+      setShowCreateGroupModal(false);
+      setToastMessage(`Group "${newGroup.group_name}" created successfully!`);
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       setToastMessage(errorMessage(error, 'Failed to create group. Please try again.'));
       setToastType('error');
@@ -136,15 +128,13 @@ const StreamPage: React.FC = () => {
     }
 
     try {
-      const newMember = await streamService.addMemberToGroup(
-        memberData.topicId,
-        memberData.groupId,
-        memberData.name,
-        memberData.address,
-        amount
-      );
+      const newMember = await streamService.addMemberToGroup(memberData.groupId, {
+        name: memberData.name,
+        address: memberData.address,
+        amount,
+      });
 
-      await submitMessage(
+      await hederaApi.submitMessage(
         memberData.topicId,
         JSON.stringify({
           type: 'add member',
@@ -154,17 +144,11 @@ const StreamPage: React.FC = () => {
         })
       );
 
-      if (newMember) {
-        await loadGroups();
-        setShowAddMemberModal(false);
-        setToastMessage('Member added successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage('Failed to add member. Please try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      await loadGroups();
+      setShowAddMemberModal(false);
+      setToastMessage(`${newMember.name} added successfully!`);
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       setToastMessage(errorMessage(error, 'Failed to add member. Please try again.'));
       setToastType('error');
@@ -176,18 +160,12 @@ const StreamPage: React.FC = () => {
     if (!hederaAccountId) return;
     
     try {
-      const success = await streamService.deleteGroup(groupId, hederaAccountId);
+      await streamService.deleteGroup(groupId);
 
-      if (success) {
-        await loadGroups();
-        setToastMessage('Group deleted successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage('Failed to delete group. Please try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      await loadGroups();
+      setToastMessage('Group deleted successfully!');
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
       setToastMessage(errorMessage(error, 'Failed to delete group. Please try again.'));
       setToastType('error');
@@ -216,23 +194,17 @@ const StreamPage: React.FC = () => {
         throw new Error('Total allocation must be greater than zero.');
       }
 
-      const treasuryAddress = await resolveEvmAddress(treasuryAccountId);
+      const treasuryAddress = await hederaApi.resolveEvmAddress(treasuryAccountId);
       await sendTransactionAsync({ to: treasuryAddress, value });
 
-      const scheduledGroup = await streamService.scheduledGroup(groupId, hederaAccountId);
+      await streamService.scheduleGroup(groupId);
 
-      if (scheduledGroup) {
-        await loadGroups();
-        setToastMessage('Group scheduled successfully!');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage('Failed to schedule group. Please try again.');
-        setToastType('error');
-        setShowToast(true);
-      }
+      await loadGroups();
+      setToastMessage('Group scheduled successfully!');
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
-      setToastMessage(errorMessage(error, 'Failed to release group. Please try again.'));
+      setToastMessage(errorMessage(error, 'Failed to schedule group. Please try again.'));
       setToastType('error');
       setShowToast(true);
     }
